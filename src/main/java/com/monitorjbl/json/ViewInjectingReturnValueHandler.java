@@ -15,19 +15,18 @@ public class ViewInjectingReturnValueHandler implements HandlerMethodReturnValue
 
   @Override
   public boolean supportsReturnType(MethodParameter returnType) {
-    JsonResult result = null;
     for (Class<?> t : returnType.getMethod().getParameterTypes()) {
       if (JsonResult.class.equals(t)) {
-        result = JsonResult.get();
+        return true;
       }
     }
-    System.out.println(result);
     return delegate.supportsReturnType(returnType);
   }
 
   @Override
   public void handleReturnValue(Object returnValue, MethodParameter returnType, ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
-    delegate.handleReturnValue(returnValue, returnType, mavContainer, webRequest);
+    JsonResult result = JsonResult.get();
+    delegate.handleReturnValue(new JsonResultWrapper(result, returnValue), returnType, mavContainer, webRequest);
   }
 
 }

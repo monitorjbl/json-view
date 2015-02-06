@@ -1,7 +1,7 @@
 package com.monitorjbl.json;
 
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -13,7 +13,9 @@ public class ViewAwareJsonMessageConverter extends MappingJackson2HttpMessageCon
   public ViewAwareJsonMessageConverter() {
     super();
     ObjectMapper defaultMapper = new ObjectMapper();
-    defaultMapper.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true);
+    SimpleModule module = new SimpleModule();
+    module.addSerializer(JsonResultWrapper.class, new JsonViewSerializer());
+    defaultMapper.registerModule(module);
     setObjectMapper(defaultMapper);
   }
 

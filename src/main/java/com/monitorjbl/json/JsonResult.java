@@ -24,6 +24,14 @@ public class JsonResult {
     return this;
   }
 
+  List<String> getIncludes() {
+    return includes;
+  }
+
+  List<String> getExcludes() {
+    return excludes;
+  }
+
   static JsonResult get() {
     return current.get();
   }
