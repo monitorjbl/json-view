@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
+import java.util.Map;
 
 @JsonIgnoreProperties({"ignoredIndirect"})
 public class TestObject {
@@ -15,7 +16,11 @@ public class TestObject {
   private int int1;
   private TestSubobject sub;
   private List<String> list;
+  private Map<String,String> mapOfStrings;
+  private Map<Integer,String> mapWithIntKeys;
   private String[] array;
+  private List<TestSubobject> listOfObjects;
+  private Map<String, TestSubobject> mapOfObjects;
 
   public String getStr1() {
     return str1;
@@ -73,11 +78,43 @@ public class TestObject {
     this.list = list;
   }
 
+  public Map<String, String> getMapOfStrings() {
+    return mapOfStrings;
+  }
+
+  public void setMapOfStrings(Map<String, String> mapOfStrings) {
+    this.mapOfStrings = mapOfStrings;
+  }
+
+  public Map<Integer, String> getMapWithIntKeys() {
+    return mapWithIntKeys;
+  }
+
+  public void setMapWithIntKeys(Map<Integer, String> mapWithIntKeys) {
+    this.mapWithIntKeys = mapWithIntKeys;
+  }
+
   public String[] getArray() {
     return array;
   }
 
   public void setArray(String[] array) {
     this.array = array;
+  }
+
+  public List<TestSubobject> getListOfObjects() {
+    return listOfObjects;
+  }
+
+  public void setListOfObjects(List<TestSubobject> listOfObjects) {
+    this.listOfObjects = listOfObjects;
+  }
+
+  public Map<String, TestSubobject> getMapOfObjects() {
+    return mapOfObjects;
+  }
+
+  public void setMapOfObjects(Map<String, TestSubobject> mapOfObjects) {
+    this.mapOfObjects = mapOfObjects;
   }
 }

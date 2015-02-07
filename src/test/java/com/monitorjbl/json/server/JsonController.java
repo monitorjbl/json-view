@@ -1,5 +1,6 @@
 package com.monitorjbl.json.server;
 
+import com.google.common.collect.ImmutableMap;
 import com.monitorjbl.json.Match;
 import com.monitorjbl.json.JsonResult;
 import com.monitorjbl.json.model.TestObject;
@@ -74,9 +75,9 @@ public class JsonController {
   @RequestMapping(method = RequestMethod.GET, value = "/map")
   @ResponseBody
   public Map<String, String> map() {
-    return new HashMap<String, String>() {{
-      put("red", "herring");
-      put("blue", "fish");
-    }};
+    return ImmutableMap.of(
+        "red", "herring",
+        "blue", "fish"
+    );
   }
 }

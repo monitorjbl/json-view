@@ -66,7 +66,7 @@ public class JsonResultSerializer extends JsonSerializer<JsonResult> {
 
         jgen.writeStartArray();
         for (Object o : iter) {
-          write(null, o);
+          new Writer(jgen, result).write(null, o);
         }
         jgen.writeEndArray();
       } else {
@@ -75,9 +75,17 @@ public class JsonResultSerializer extends JsonSerializer<JsonResult> {
       return true;
     }
 
+    @SuppressWarnings("unchecked")
     boolean writeMap(Object obj) throws IOException {
       if (obj instanceof Map) {
-        jgen.writeObject(obj);
+        Map<Object, Object> map = (Map<Object, Object>) obj;
+
+        jgen.writeStartObject();
+        for (Object key : map.keySet()) {
+          jgen.writeFieldName(key.toString());
+          new Writer(jgen, result).write(null, map.get(key));
+        }
+        jgen.writeEndObject();
       } else {
         return false;
       }

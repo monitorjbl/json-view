@@ -1,8 +1,8 @@
 package com.monitorjbl.json;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.google.common.collect.ImmutableMap;
 import com.monitorjbl.json.model.TestChildObject;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestSubobject;
@@ -219,6 +219,79 @@ public class JsonResultSerializerTest {
     Map<String, Object> t3 = output.get(2);
     assertEquals(ref3.getId().longValue(), ((Integer) t3.get("id")).longValue());
     assertNull(t3.get("name"));
+  }
+
+  @Test
+  public void testListOfSubobjects() throws IOException {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    ref.setListOfObjects(Arrays.asList(new TestSubobject("test1"), new TestSubobject("test2", new TestSubobject("test3"))));
+    String serialized = sut.writeValueAsString(
+        JsonResult.with(ref)
+            .onClass(TestObject.class, Match.match()
+                .exclude("sub.val"))
+            .onClass(TestSubobject.class, Match.match()
+                .exclude("sub")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals(ref.getInt1(), obj.get("int1"));
+    assertTrue(obj.get("listOfObjects") instanceof List);
+    List<Map<String, Object>> list = (List<Map<String, Object>>) obj.get("listOfObjects");
+    assertEquals(2, list.size());
+    assertEquals("test1", list.get(0).get("val"));
+    assertEquals("test2", list.get(1).get("val"));
+    assertNull(list.get(1).get("sub"));
+  }
+
+  @Test
+  public void testMapOfSubobjects() throws IOException {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    ref.setMapOfObjects(ImmutableMap.of(
+        "key1", new TestSubobject("test1"),
+        "key2", new TestSubobject("test2", new TestSubobject("test3"))
+    ));
+    String serialized = sut.writeValueAsString(
+        JsonResult.with(ref)
+            .onClass(TestObject.class, Match.match()
+                .exclude("sub.val"))
+            .onClass(TestSubobject.class, Match.match()
+                .exclude("sub")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals(ref.getInt1(), obj.get("int1"));
+    assertTrue(obj.get("mapOfObjects") instanceof Map);
+    Map<String, Map<String, Object>> map = (Map<String, Map<String, Object>>) obj.get("mapOfObjects");
+    assertEquals(2, map.size());
+    assertEquals("test1", map.get("key1").get("val"));
+    assertEquals("test2", map.get("key2").get("val"));
+    assertNull(map.get("key2").get("sub"));
+  }
+
+  @Test
+  public void testMapWithNonStringKeys() throws IOException {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    ref.setMapWithIntKeys(ImmutableMap.of(
+        1, "red",
+        2, "green"
+    ));
+    String serialized = sut.writeValueAsString(
+        JsonResult.with(ref)
+            .onClass(TestObject.class, Match.match()
+                .exclude("sub.val"))
+            .onClass(TestSubobject.class, Match.match()
+                .exclude("sub")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals(ref.getInt1(), obj.get("int1"));
+    assertTrue(obj.get("mapWithIntKeys") instanceof Map);
+    Map map = (Map) obj.get("mapWithIntKeys");
+    assertEquals(2, map.size());
+    assertNull(map.get(1));
+    assertEquals(ref.getMapWithIntKeys().get(1), map.get("1"));
+    assertNull(map.get(2));
+    assertEquals(ref.getMapWithIntKeys().get(2), map.get("2"));
   }
 
 }
