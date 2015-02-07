@@ -1,6 +1,6 @@
 package com.monitorjbl.json.server;
 
-import com.monitorjbl.json.JsonResultSupportFactoryBean;
+import com.monitorjbl.json.JsonViewSupportFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +12,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @ComponentScan({"com.monitorjbl"})
 public class Context extends WebMvcConfigurerAdapter {
   @Bean
-  public JsonResultSupportFactoryBean views() {
-    return new JsonResultSupportFactoryBean();
+  public JsonViewSupportFactoryBean views() {
+    return new JsonViewSupportFactoryBean();
   }
 }

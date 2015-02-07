@@ -2,7 +2,7 @@ package com.monitorjbl.json.server;
 
 import com.google.common.collect.ImmutableMap;
 import com.monitorjbl.json.Match;
-import com.monitorjbl.json.JsonResult;
+import com.monitorjbl.json.JsonView;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestSubobject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +44,7 @@ public class JsonController {
     obj.setList(Arrays.asList("red", "blue", "green"));
     obj.setSub(new TestSubobject("qwerqwerqwerqw"));
 
-    JsonResult.with(obj)
+    JsonView.with(obj)
         .onClass(TestObject.class, Match.match()
             .exclude("int1")
             .include("ignoredDirect"));
@@ -65,7 +65,7 @@ public class JsonController {
     obj.setStr2("asdf");
     list.add(obj);
 
-    JsonResult.with(list)
+    JsonView.with(list)
         .onClass(TestObject.class, Match.match()
             .exclude("int1")
             .include("ignoredDirect"));

@@ -6,13 +6,13 @@ import java.util.Map;
 /**
  * Allows runtime alteration of JSON responses
  */
-public class JsonResult {
-  private static ThreadLocal<JsonResult> current;
+public class JsonView {
+  private static ThreadLocal<JsonView> current;
 
   private final Object value;
   private final Map<Class<?>, Match> matches = new HashMap<>();
 
-  JsonResult(Object value) {
+  private JsonView(Object value) {
     this.value = value;
     current = new ThreadLocal<>();
     current.set(this);
@@ -26,16 +26,16 @@ public class JsonResult {
     return matches.get(cls);
   }
 
-  public JsonResult onClass(Class<?> cls, Match match) {
+  public JsonView onClass(Class<?> cls, Match match) {
     matches.put(cls, match);
     return this;
   }
 
-  public static JsonResult with(Object value) {
-    return new JsonResult(value);
+  public static JsonView with(Object value) {
+    return new JsonView(value);
   }
 
-  static JsonResult get() {
+  static JsonView get() {
     return current == null ? null : current.get();
   }
 

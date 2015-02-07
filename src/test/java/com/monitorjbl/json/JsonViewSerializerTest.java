@@ -23,7 +23,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("unchecked")
-public class JsonResultSerializerTest {
+public class JsonViewSerializerTest {
 
   ObjectMapper sut;
 
@@ -31,7 +31,7 @@ public class JsonResultSerializerTest {
   public void setup() {
     sut = new ObjectMapper();
     SimpleModule module = new SimpleModule();
-    module.addSerializer(JsonResult.class, new JsonResultSerializer());
+    module.addSerializer(JsonView.class, new JsonViewSerializer());
     sut.registerModule(module);
   }
 
@@ -40,7 +40,7 @@ public class JsonResultSerializerTest {
     TestObject ref = new TestObject();
     ref.setInt1(1);
     ref.setIgnoredDirect("ignore me");
-    String serialized = sut.writeValueAsString(JsonResult.with(ref));
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
     assertNotNull(obj.get("int1"));
     assertEquals(ref.getInt1(), obj.get("int1"));
@@ -52,7 +52,7 @@ public class JsonResultSerializerTest {
     TestObject ref = new TestObject();
     ref.setInt1(1);
     ref.setIgnoredIndirect("ignore me");
-    String serialized = sut.writeValueAsString(JsonResult.with(ref));
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
     assertNotNull(obj.get("int1"));
     assertEquals(ref.getInt1(), obj.get("int1"));
@@ -68,7 +68,7 @@ public class JsonResultSerializerTest {
     ref.setList(Arrays.asList("red", "blue", "green"));
     ref.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
     String serialized = sut.writeValueAsString(
-        JsonResult.with(ref).onClass(TestObject.class, Match.match()
+        JsonView.with(ref).onClass(TestObject.class, Match.match()
             .exclude("str2")
             .exclude("sub.val")
             .include("ignoredDirect")));
@@ -88,7 +88,7 @@ public class JsonResultSerializerTest {
     ref.setArray(new String[]{"pizza", "french fry"});
 
     String serialized = sut.writeValueAsString(
-        JsonResult.with(ref).onClass(TestObject.class, Match.match()
+        JsonView.with(ref).onClass(TestObject.class, Match.match()
             .exclude("str2")
             .exclude("sub.val")
             .include("ignoredDirect")));
@@ -107,7 +107,7 @@ public class JsonResultSerializerTest {
     ref.setStr2("asdf");
     ref.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
     String serialized = sut.writeValueAsString(
-        JsonResult.with(ref)
+        JsonView.with(ref)
             .onClass(TestObject.class, Match.match()
                 .exclude("str2")
                 .exclude("sub.val"))
@@ -138,7 +138,7 @@ public class JsonResultSerializerTest {
     List<TestObject> refList = Arrays.asList(ref1, ref2);
 
     String serialized = sut.writeValueAsString(
-        JsonResult.with(refList).onClass(TestObject.class, Match.match()
+        JsonView.with(refList).onClass(TestObject.class, Match.match()
             .exclude("str2")
             .exclude("sub.val")
             .include("ignoredDirect")));
@@ -193,7 +193,7 @@ public class JsonResultSerializerTest {
     ref3.setName("xxzcvxc");
 
     String serialized = sut.writeValueAsString(
-        JsonResult.with(Arrays.asList(ref1, ref2, ref3))
+        JsonView.with(Arrays.asList(ref1, ref2, ref3))
             .onClass(TestObject.class, Match.match()
                 .exclude("str2")
                 .include("ignoredIndirect"))
@@ -227,7 +227,7 @@ public class JsonResultSerializerTest {
     ref.setInt1(1);
     ref.setListOfObjects(Arrays.asList(new TestSubobject("test1"), new TestSubobject("test2", new TestSubobject("test3"))));
     String serialized = sut.writeValueAsString(
-        JsonResult.with(ref)
+        JsonView.with(ref)
             .onClass(TestObject.class, Match.match()
                 .exclude("sub.val"))
             .onClass(TestSubobject.class, Match.match()
@@ -252,7 +252,7 @@ public class JsonResultSerializerTest {
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
     ));
     String serialized = sut.writeValueAsString(
-        JsonResult.with(ref)
+        JsonView.with(ref)
             .onClass(TestObject.class, Match.match()
                 .exclude("sub.val"))
             .onClass(TestSubobject.class, Match.match()
@@ -277,7 +277,7 @@ public class JsonResultSerializerTest {
         2, "green"
     ));
     String serialized = sut.writeValueAsString(
-        JsonResult.with(ref)
+        JsonView.with(ref)
             .onClass(TestObject.class, Match.match()
                 .exclude("sub.val"))
             .onClass(TestSubobject.class, Match.match()

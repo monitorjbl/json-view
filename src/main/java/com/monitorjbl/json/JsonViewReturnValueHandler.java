@@ -8,12 +8,12 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.util.List;
 
-public class JsonResultReturnValueHandler implements HandlerMethodReturnValueHandler {
+public class JsonViewReturnValueHandler implements HandlerMethodReturnValueHandler {
 
   private final HandlerMethodReturnValueHandler delegate;
 
-  public JsonResultReturnValueHandler(List<HttpMessageConverter<?>> converters) {
-    this.delegate = new JsonResultResponseProcessor(converters);
+  public JsonViewReturnValueHandler(List<HttpMessageConverter<?>> converters) {
+    this.delegate = new JsonViewResponseProcessor(converters);
   }
 
   @Override
@@ -24,8 +24,8 @@ public class JsonResultReturnValueHandler implements HandlerMethodReturnValueHan
   @Override
   public void handleReturnValue(Object returnValue, MethodParameter returnType, ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
     Object val = returnValue;
-    if (void.class.equals(returnType.getMethod().getReturnType()) && JsonResult.get() != null) {
-      val = JsonResult.get();
+    if (void.class.equals(returnType.getMethod().getReturnType()) && JsonView.get() != null) {
+      val = JsonView.get();
     }
     delegate.handleReturnValue(val, returnType, mavContainer, webRequest);
   }

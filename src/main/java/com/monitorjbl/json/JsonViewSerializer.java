@@ -15,10 +15,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-public class JsonResultSerializer extends JsonSerializer<JsonResult> {
+public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
   @Override
-  public void serialize(JsonResult result, JsonGenerator jgen, SerializerProvider serializers) throws IOException, JsonProcessingException {
+  public void serialize(JsonView result, JsonGenerator jgen, SerializerProvider serializers) throws IOException, JsonProcessingException {
     new Writer(jgen, result).write(null, result.getValue());
   }
 
@@ -28,9 +28,9 @@ public class JsonResultSerializer extends JsonSerializer<JsonResult> {
     Match currentMatch = null;
 
     JsonGenerator jgen;
-    JsonResult result;
+    JsonView result;
 
-    public Writer(JsonGenerator jgen, JsonResult result) {
+    public Writer(JsonGenerator jgen, JsonView result) {
       this.jgen = jgen;
       this.result = result;
     }

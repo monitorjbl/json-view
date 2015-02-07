@@ -8,13 +8,13 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 
 import java.io.IOException;
 
-public class JsonResultMessageConverter extends MappingJackson2HttpMessageConverter {
+public class JsonViewMessageConverter extends MappingJackson2HttpMessageConverter {
 
-  public JsonResultMessageConverter() {
+  public JsonViewMessageConverter() {
     super();
     ObjectMapper defaultMapper = new ObjectMapper();
     SimpleModule module = new SimpleModule();
-    module.addSerializer(JsonResult.class, new JsonResultSerializer());
+    module.addSerializer(JsonView.class, new JsonViewSerializer());
     defaultMapper.registerModule(module);
     setObjectMapper(defaultMapper);
   }

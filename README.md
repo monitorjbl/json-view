@@ -27,7 +27,7 @@ If you were to return a list of `MyObject`, you may not want to show the `contai
 
 The typically suggested pattern suggests using the `@JsonIgnore` annotation on the field. However, this effectively makes this field permanently ignored everywhere in your app. What if you want only don't want to show this field when dealing with a single instance rather than a `List`?
 
-Using `JsonResult` allows you to filter this field out quickly and easily in your controller methods:
+Using `JsonView` allows you to filter this field out quickly and easily in your controller methods:
 
 ```java
 import static com.monitorjbl.json.Match.match;
@@ -39,7 +39,7 @@ public void getMyObjects() {
     List<MyObject> list = myObjectService.list();
 
     //exclude expensive field
-    JsonResult.with(list).onClass(MyObject.class, match().exclude("contains"));
+    JsonView.with(list).onClass(MyObject.class, match().exclude("contains"));
 }
 ```
 
@@ -72,7 +72,7 @@ public void getMyObjects() {
     List<MyObject> list = myObjectService.list();
 
     //exclude expensive field
-    JsonResult.with(list).onClass(MyObject.class, match().include("contains"));
+    JsonView.with(list).onClass(MyObject.class, match().include("contains"));
 }
 ```
 
@@ -89,7 +89,7 @@ public void getMyObjects() {
     //get a list of the objects
     List<MyObject> list = myObjectService.list();
 
-    JsonResult.with(list).onClass(MyObject.class, match()
+    JsonView.with(list).onClass(MyObject.class, match()
       .exclude("smallObj.id")
       .exclude("contains"));
 }
@@ -106,7 +106,7 @@ public void getMyObjects() {
     //get a list of the objects
     List<MyObject> list = myObjectService.list();
 
-    JsonResult.with(list)
+    JsonView.with(list)
       .onClass(MyObject.class, match()
         .exclude("contains"))
       .onClass(MySmallObject.class, match()
@@ -114,9 +114,28 @@ public void getMyObjects() {
 }
 ```
 
+All this functionality really boils down to a custom Jackson serializer. If you'd like to use it outside of Spring, you certainly can! Just initialize a standard Jackson `ObjectMapper` class and tell it to serialize your object like so:
+
+```java
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import static com.monitorjbl.json.Match.match;
+
+ObjectMapper mapper = new ObjectMapper();
+SimpleModule module = new SimpleModule();
+module.addSerializer(JsonView.class, new JsonViewSerializer());
+mapper.registerModule(module);
+
+mapper.writeValueAsString(JsonView.with(list)
+      .onClass(MyObject.class, match()
+        .exclude("contains"))
+      .onClass(MySmallObject.class, match()
+        .exclude("id"));
+```
+
 ## Rules
 
-The `JsonResult` object is built to make it simple to include/exclude fields from your POJOs. However, when parsing your specified config, you should be aware of the following rules:
+The `JsonView` object is built to make it simple to include/exclude fields from your POJOs. However, when parsing your specified config, you should be aware of the following rules:
 
 1. Class inheritance is respected. If you `match()` on a parent class's field, it will be respected without needing a separate `match()` for the parent class.
 2. Higher class specificity in `Match.match()` overrides lower and it is *not* field-based; use of a matcher is an all-or-nothing affair based on the class for which you declare it to be used. Here are a couple of examples where this is important to keep in mind:
@@ -129,7 +148,6 @@ The `JsonResult` object is built to make it simple to include/exclude fields fro
 
 
 ## Usage
-
 
 To use it, simply add this project to your classpath using your build tool of choice. Here's a Maven example:
 
@@ -149,8 +167,8 @@ Then, just add it to your context as a bean:
 @ComponentScan({"com.monitorjbl"})
 public class Context extends WebMvcConfigurerAdapter {
   @Bean
-  public JsonResultSupportFactoryBean views() {
-    return new JsonResultSupportFactoryBean();
+  public JsonViewSupportFactoryBean views() {
+    return new JsonViewSupportFactoryBean();
   }
 }
 ```
