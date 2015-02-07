@@ -149,7 +149,7 @@ The `JsonView` object is built to make it simple to include/exclude fields from 
 
 ## Usage
 
-To use it, simply add this project to your classpath using your build tool of choice. Here's a Maven example:
+To use it, simply add this project to your classpath using your build tool of choice. This project is available on Maven Central, so if you're using Maven you can just add this to your pom.xml:
 
 ```xml
 <dependency>
@@ -159,8 +159,9 @@ To use it, simply add this project to your classpath using your build tool of ch
 </dependency>
 ```
 
-Then, just add it to your context as a bean:
+A word of warning: this project was built for Spring 4+, integration with Spring 3 is not supported yet. Make sure you're using the correct version. If you are, just add it to your context as a bean:
 
+**Java config**
 ```java
 @EnableWebMvc
 @Configuration
@@ -171,6 +172,11 @@ public class Context extends WebMvcConfigurerAdapter {
     return new JsonViewSupportFactoryBean();
   }
 }
+```
+
+**XML config**
+```xml
+<bean id="jsonViewSupport" class="com.monitorjbl.json.JsonViewSupportFactoryBean/>
 ```
 
 ## Design
