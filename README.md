@@ -12,7 +12,7 @@ The most common use case for this is when dealing with Hibernate POJOs. If you h
 public class MyObject{
   private Long id;
   private String name;
-  private List<MyOtherObject> contains;         //expensive list with many entries
+  private List<MyOtherObject> contains;       //expensive list with many entries
 
   //getters and setters and/or builder
 }
@@ -31,7 +31,7 @@ public void getMyObjects() {
     //get a list of the objects
     List<MyObject> list = myObjectService.list();
 
-    //get a list of the objects
+    //exclude expensive field 
     JsonResult.with(list).onClass(MyObject.class, Match.on().exclude("contains"));
 }
 ```
