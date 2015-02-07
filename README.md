@@ -30,6 +30,7 @@ The typically suggested pattern suggests using the `@JsonIgnore` annotation on t
 Using `JsonView` allows you to filter this field out quickly and easily in your controller methods (note that your method return value must be `void`):
 
 ```java
+import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 
 @RequestMapping(method = RequestMethod.GET, value = "/myObject")
@@ -63,6 +64,7 @@ You can programmatically include fields that are ignored by default:
 
 
 ```java
+import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 
 @RequestMapping(method = RequestMethod.GET, value = "/myObject")
@@ -81,6 +83,7 @@ public void getMyObjects() {
 You can also ignore fields on classes referenced by a class! Simply reference the field in a dot-path to do this. In the below example, the field `id` on the class `MySmallObject` is ignored:
 
 ```java
+import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 
 @RequestMapping(method = RequestMethod.GET, value = "/myObject")
@@ -98,6 +101,7 @@ public void getMyObjects() {
 Alternatively, you can make a separate matcher for other classes:
 
 ```java
+import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 
 @RequestMapping(method = RequestMethod.GET, value = "/myObject")
@@ -119,6 +123,8 @@ All this functionality really boils down to a custom Jackson serializer. If you'
 ```java
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.monitorjbl.json.JsonView;
+
 import static com.monitorjbl.json.Match.match;
 
 ObjectMapper mapper = new ObjectMapper();
