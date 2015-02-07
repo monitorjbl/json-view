@@ -6,7 +6,7 @@ While the declarative style certainly has many benefits (compile-time checking, 
 
 ## Use cases
 
-The potential use cases for this are pretty varied, but they typically boil down to two things: exclusion and inclusion of class fields.
+The potential use cases for this library are pretty varied, but here are a few to get you started.
 
 ### Exclusion
 
