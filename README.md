@@ -81,13 +81,14 @@ public void getMyObjects() {
 
 The `JsonResult` object is built to make it simple to include/exclude fields from your POJOs. However, when parsing your specified config, you should be aware of the following rules:
 
-1. `@JsonIgnore` and `@JsonIgnoreProperties` are respected, unless overridden by `include()`.
-2. Class inheritance is respected. If you `match()` on a parent class's field, it will be respected without needing a separate `match()` for the parent class.
-3. Higher class specificity in `Match.match()` overrides lower and it is *not* field-based; use of a matcher is an all-or-nothing affair based on the class for which you declare it to be used. Here are a couple of examples where this is important to keep in mind:
+1. Class inheritance is respected. If you `match()` on a parent class's field, it will be respected without needing a separate `match()` for the parent class.
+2. Higher class specificity in `Match.match()` overrides lower and it is *not* field-based; use of a matcher is an all-or-nothing affair based on the class for which you declare it to be used. Here are a couple of examples where this is important to keep in mind:
   1. If you provide matchers for both your class *and* its parent class, the parent's matcher will be used.
   2. If you provide matchers for Class A and Class B, and Class A has a field typed Class B, the following will occur
     1. If the matcher for Class A references the field in Class A, Class A's matcher will be respected
     2. If the matcher for Class A references fields in Class B with a path, Class B's matcher will be respected
+3. `@JsonIgnore` on fields (not methods) and `@JsonIgnoreProperties` are respected, unless overridden by `include()`.
+4. All serialization is done via fields only. There is no current support for method-based serialization.
 
 
 ## Usage
