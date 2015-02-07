@@ -1,7 +1,7 @@
 package com.monitorjbl.json;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Allows runtime alteration of JSON responses
@@ -9,33 +9,34 @@ import java.util.List;
 public class JsonResult {
   private static ThreadLocal<JsonResult> current;
 
-  private final List<String> includes = new ArrayList<>();
-  private final List<String> excludes = new ArrayList<>();
+  private final Object value;
+  private final Map<Class<?>, Match> matches = new HashMap<>();
 
-  JsonResult() {
+  JsonResult(Object value) {
+    this.value = value;
     current = new ThreadLocal<>();
     current.set(this);
   }
 
-  public JsonResult include(String field) {
-    includes.add(field);
+  Object getValue() {
+    return value;
+  }
+
+  Match getMatch(Class<?> cls) {
+    return matches.get(cls);
+  }
+
+  public JsonResult onClass(Class<?> cls, Match match) {
+    matches.put(cls, match);
     return this;
   }
 
-  public JsonResult exclude(String field) {
-    excludes.add(field);
-    return this;
-  }
-
-  List<String> getIncludes() {
-    return includes;
-  }
-
-  List<String> getExcludes() {
-    return excludes;
+  public static JsonResult with(Object value) {
+    return new JsonResult(value);
   }
 
   static JsonResult get() {
-    return current.get();
+    return current == null ? null : current.get();
   }
+
 }

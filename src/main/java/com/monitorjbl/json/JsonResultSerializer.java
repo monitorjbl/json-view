@@ -15,16 +15,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-public class JsonWrapperSerializer extends JsonSerializer<JsonWrapper> {
+public class JsonResultSerializer extends JsonSerializer<JsonResult> {
 
   @Override
-  public void serialize(JsonWrapper wrapper, JsonGenerator jgen, SerializerProvider serializers) throws IOException, JsonProcessingException {
-    new Writer(jgen, wrapper.getResult()).write(null, wrapper.getValue());
+  public void serialize(JsonResult result, JsonGenerator jgen, SerializerProvider serializers) throws IOException, JsonProcessingException {
+    new Writer(jgen, result).write(null, result.getValue());
   }
 
   private static class Writer {
     Stack<String> path = new Stack<>();
     String currentPath = "";
+    Match currentMatch = null;
 
     JsonGenerator jgen;
     JsonResult result;
@@ -45,13 +46,35 @@ public class JsonWrapperSerializer extends JsonSerializer<JsonWrapper> {
         jgen.writeNumber((Float) obj);
       } else if (Boolean.class.isInstance(obj)) {
         jgen.writeBoolean((Boolean) obj);
-      } else if (obj instanceof List) {
-        jgen.writeObject(obj);
-      } else if (obj instanceof Map) {
-        jgen.writeObject(obj);
-      } else if (obj instanceof Set) {
-        jgen.writeObject(obj);
-      } else if (obj.getClass().isArray()) {
+      } else {
+        return false;
+      }
+      return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    boolean writeList(Object obj) throws IOException {
+      if (obj instanceof List || obj instanceof Set || obj.getClass().isArray()) {
+        Iterable<Object> iter;
+        if (obj.getClass().isArray()) {
+          iter = Arrays.asList((Object[]) obj);
+        } else {
+          iter = (Iterable<Object>) obj;
+        }
+
+        jgen.writeStartArray();
+        for (Object o : iter) {
+          write(null, o);
+        }
+        jgen.writeEndArray();
+      } else {
+        return false;
+      }
+      return true;
+    }
+
+    boolean writeMap(Object obj) throws IOException {
+      if (obj instanceof Map) {
         jgen.writeObject(obj);
       } else {
         return false;
@@ -88,7 +111,21 @@ public class JsonWrapperSerializer extends JsonSerializer<JsonWrapper> {
     boolean fieldAllowed(Field field) {
       String name = field.getName();
       String prefix = currentPath.length() > 0 ? currentPath + "." : "";
-      return (result.getIncludes().contains(prefix + name) || !annotatedWithIgnore(field)) && !result.getExcludes().contains(prefix + name);
+
+      //if there is a match specifically for this class, use it
+      Match match = result.getMatch(field.getDeclaringClass());
+      if (match == null) {
+        match = currentMatch;
+      }
+
+      if (match != null) {
+        //if there is a match, respect it
+        currentMatch = match;
+        return (match.getIncludes().contains(prefix + name) || !annotatedWithIgnore(field)) && !match.getExcludes().contains(prefix + name);
+      } else {
+        //else, respect JsonIgnore only
+        return !annotatedWithIgnore(field);
+      }
     }
 
     //TODO: respect class inheritance
@@ -105,7 +142,8 @@ public class JsonWrapperSerializer extends JsonSerializer<JsonWrapper> {
         updateCurrentPath();
       }
 
-      if (value != null && !writePrimitive(value)) {
+      //try to handle all primitives before treating this as json object
+      if (value != null && !writePrimitive(value) && !writeList(value) && !writeMap(value)) {
         writeObject(value);
       }
 

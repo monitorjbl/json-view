@@ -13,7 +13,7 @@ public class JsonResultReturnValueHandler implements HandlerMethodReturnValueHan
   private final HandlerMethodReturnValueHandler delegate;
 
   public JsonResultReturnValueHandler(List<HttpMessageConverter<?>> converters) {
-    this.delegate = new JsonResponseProcessor(converters);
+    this.delegate = new JsonResultResponseProcessor(converters);
   }
 
   @Override
@@ -24,10 +24,8 @@ public class JsonResultReturnValueHandler implements HandlerMethodReturnValueHan
   @Override
   public void handleReturnValue(Object returnValue, MethodParameter returnType, ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
     Object val = returnValue;
-    for (Class<?> t : returnType.getMethod().getParameterTypes()) {
-      if (JsonResult.class.equals(t)) {
-        val = new JsonWrapper(JsonResult.get(), returnValue);
-      }
+    if (void.class.equals(returnType.getMethod().getReturnType()) && JsonResult.get() != null) {
+      val = JsonResult.get();
     }
     delegate.handleReturnValue(val, returnType, mavContainer, webRequest);
   }

@@ -5,8 +5,8 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBody
 
 import java.util.List;
 
-public class JsonResponseProcessor extends RequestResponseBodyMethodProcessor {
-  public JsonResponseProcessor(List<HttpMessageConverter<?>> messageConverters) {
+public class JsonResultResponseProcessor extends RequestResponseBodyMethodProcessor {
+  public JsonResultResponseProcessor(List<HttpMessageConverter<?>> messageConverters) {
     super(messageConverters);
   }
 }

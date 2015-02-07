@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class JsonViewSupportFactoryBean implements InitializingBean {
+public class JsonResultSupportFactoryBean implements InitializingBean {
 
   @Autowired
   private RequestMappingHandlerAdapter adapter;
@@ -19,7 +19,7 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
   @Override
   public void afterPropertiesSet() throws Exception {
     List<HandlerMethodReturnValueHandler> handlers = new ArrayList<>(adapter.getReturnValueHandlers());
-    adapter.setMessageConverters(Collections.<HttpMessageConverter<?>>singletonList(new JsonMessageConverter()));
+    adapter.setMessageConverters(Collections.<HttpMessageConverter<?>>singletonList(new JsonResultMessageConverter()));
     decorateHandlers(handlers);
     adapter.setReturnValueHandlers(handlers);
   }
@@ -29,7 +29,7 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
       if (handler instanceof RequestResponseBodyMethodProcessor) {
         int index = handlers.indexOf(handler);
         List<HttpMessageConverter<?>> converters = new ArrayList<>(adapter.getMessageConverters());
-        converters.add(new JsonMessageConverter());
+        converters.add(new JsonResultMessageConverter());
         handlers.set(index, new JsonResultReturnValueHandler(converters));
         break;
       }

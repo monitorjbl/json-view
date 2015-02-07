@@ -9,7 +9,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -36,10 +38,22 @@ public class ReturnValueTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void test() throws IOException {
+  public void testSimple() throws IOException {
     Map<String, Object> map = new ObjectMapper().readValue(Request.Get("http://localhost:8080/bean").execute().returnContent().asStream(), HashMap.class);
     assertEquals("ignored", map.get("ignoredDirect"));
     assertNull(map.get("int1"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testList() throws IOException {
+    List<Map<String, Object>> list = new ObjectMapper().readValue(Request.Get("http://localhost:8080/list").execute().returnContent().asStream(), ArrayList.class);
+
+    assertEquals(2, list.size());
+    for (Map<String, Object> map : list) {
+      assertEquals("ignored", map.get("ignoredDirect"));
+      assertNull(map.get("int1"));
+    }
   }
 
   @AfterClass

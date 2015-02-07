@@ -60,4 +60,8 @@ public class JettyServer {
       e.printStackTrace();
     }
   }
+
+  public static void main(String[] args) {
+    new JettyServer().start(8080);
+  }
 }
