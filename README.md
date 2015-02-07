@@ -99,7 +99,7 @@ To use it, simply add this project to your classpath using your build tool of ch
 <dependency>
     <groupId>com.monitorjbl</groupId>
     <artifactId>spring-json-view</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1-SNAPSHOT</version>
 </dependency>
 ```
 

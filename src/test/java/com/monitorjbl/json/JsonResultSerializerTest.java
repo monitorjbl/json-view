@@ -269,7 +269,7 @@ public class JsonResultSerializerTest {
   }
 
   @Test
-  public void testMapWithNonStringKeys() throws IOException {
+  public void testMapWithIntKeys() throws IOException {
     TestObject ref = new TestObject();
     ref.setInt1(1);
     ref.setMapWithIntKeys(ImmutableMap.of(
