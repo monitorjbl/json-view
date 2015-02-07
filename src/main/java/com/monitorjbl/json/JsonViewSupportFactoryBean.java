@@ -19,7 +19,7 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
   @Override
   public void afterPropertiesSet() throws Exception {
     List<HandlerMethodReturnValueHandler> handlers = new ArrayList<>(adapter.getReturnValueHandlers());
-    adapter.setMessageConverters(Collections.<HttpMessageConverter<?>>singletonList(new ViewAwareJsonMessageConverter()));
+    adapter.setMessageConverters(Collections.<HttpMessageConverter<?>>singletonList(new JsonMessageConverter()));
     decorateHandlers(handlers);
     adapter.setReturnValueHandlers(handlers);
   }
@@ -29,8 +29,8 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
       if (handler instanceof RequestResponseBodyMethodProcessor) {
         int index = handlers.indexOf(handler);
         List<HttpMessageConverter<?>> converters = new ArrayList<>(adapter.getMessageConverters());
-        converters.add(new ViewAwareJsonMessageConverter());
-        handlers.set(index, new ViewInjectingReturnValueHandler(converters));
+        converters.add(new JsonMessageConverter());
+        handlers.set(index, new JsonResultReturnValueHandler(converters));
         break;
       }
     }

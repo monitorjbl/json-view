@@ -8,9 +8,9 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 
 import java.io.IOException;
 
-public class ViewAwareJsonMessageConverter extends MappingJackson2HttpMessageConverter {
+public class JsonMessageConverter extends MappingJackson2HttpMessageConverter {
 
-  public ViewAwareJsonMessageConverter() {
+  public JsonMessageConverter() {
     super();
     ObjectMapper defaultMapper = new ObjectMapper();
     SimpleModule module = new SimpleModule();

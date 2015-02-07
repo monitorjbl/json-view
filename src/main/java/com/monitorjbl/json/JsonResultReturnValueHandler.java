@@ -8,11 +8,11 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.util.List;
 
-public class ViewInjectingReturnValueHandler implements HandlerMethodReturnValueHandler {
+public class JsonResultReturnValueHandler implements HandlerMethodReturnValueHandler {
 
   private final HandlerMethodReturnValueHandler delegate;
 
-  public ViewInjectingReturnValueHandler(List<HttpMessageConverter<?>> converters) {
+  public JsonResultReturnValueHandler(List<HttpMessageConverter<?>> converters) {
     this.delegate = new JsonResponseProcessor(converters);
   }
 
