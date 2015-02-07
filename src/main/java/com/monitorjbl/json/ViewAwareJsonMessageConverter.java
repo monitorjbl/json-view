@@ -14,7 +14,7 @@ public class ViewAwareJsonMessageConverter extends MappingJackson2HttpMessageCon
     super();
     ObjectMapper defaultMapper = new ObjectMapper();
     SimpleModule module = new SimpleModule();
-    module.addSerializer(JsonResultWrapper.class, new JsonViewSerializer());
+    module.addSerializer(JsonWrapper.class, new JsonWrapperSerializer());
     defaultMapper.registerModule(module);
     setObjectMapper(defaultMapper);
   }

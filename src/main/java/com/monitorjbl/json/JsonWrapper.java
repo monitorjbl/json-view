@@ -1,10 +1,10 @@
 package com.monitorjbl.json;
 
-public class JsonResultWrapper {
+public class JsonWrapper {
   private final JsonResult result;
   private final Object value;
 
-  public JsonResultWrapper(JsonResult result, Object value) {
+  public JsonWrapper(JsonResult result, Object value) {
     this.result = result;
     this.value = value;
   }

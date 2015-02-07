@@ -1,10 +1,17 @@
 package com.monitorjbl.test;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.List;
 
+@JsonIgnoreProperties({"ignoreIndirect"})
 public class TestObject {
   private String str1;
   private String str2;
+  @JsonIgnore
+  private String ignoredDirect;
+  private String ignoreIndirect;
   private int int1;
   private TestSubobject sub;
   private List<String> list;
@@ -16,6 +23,8 @@ public class TestObject {
   private TestObject(Builder builder) {
     setStr1(builder.str1);
     setStr2(builder.str2);
+    setIgnoredDirect(builder.ignoredDirect);
+    setIgnoreIndirect(builder.ignoreIndirect);
     setInt1(builder.int1);
     setSub(builder.sub);
     setList(builder.list);
@@ -40,6 +49,22 @@ public class TestObject {
 
   public void setStr2(String str2) {
     this.str2 = str2;
+  }
+
+  public String getIgnoredDirect() {
+    return ignoredDirect;
+  }
+
+  public void setIgnoredDirect(String ignoredDirect) {
+    this.ignoredDirect = ignoredDirect;
+  }
+
+  public String getIgnoreIndirect() {
+    return ignoreIndirect;
+  }
+
+  public void setIgnoreIndirect(String ignoreIndirect) {
+    this.ignoreIndirect = ignoreIndirect;
   }
 
   public int getInt1() {
@@ -78,6 +103,8 @@ public class TestObject {
   public static final class Builder {
     private String str1;
     private String str2;
+    private String ignoredDirect;
+    private String ignoreIndirect;
     private int int1;
     private TestSubobject sub;
     private List<String> list;
@@ -93,6 +120,16 @@ public class TestObject {
 
     public Builder str2(String str2) {
       this.str2 = str2;
+      return this;
+    }
+
+    public Builder ignoredDirect(String ignoredDirect) {
+      this.ignoredDirect = ignoredDirect;
+      return this;
+    }
+
+    public Builder ignoreIndirect(String ignoreIndirect) {
+      this.ignoreIndirect = ignoreIndirect;
       return this;
     }
 

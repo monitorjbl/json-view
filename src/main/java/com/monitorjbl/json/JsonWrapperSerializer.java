@@ -1,5 +1,7 @@
 package com.monitorjbl.json;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -7,15 +9,16 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-public class JsonViewSerializer extends JsonSerializer<JsonResultWrapper> {
+public class JsonWrapperSerializer extends JsonSerializer<JsonWrapper> {
 
   @Override
-  public void serialize(JsonResultWrapper wrapper, JsonGenerator jgen, SerializerProvider serializers) throws IOException, JsonProcessingException {
+  public void serialize(JsonWrapper wrapper, JsonGenerator jgen, SerializerProvider serializers) throws IOException, JsonProcessingException {
     new Writer(jgen, wrapper.getResult()).write(null, wrapper.getValue());
   }
 
@@ -63,10 +66,10 @@ public class JsonViewSerializer extends JsonSerializer<JsonResultWrapper> {
       for (Field field : fields) {
         try {
           field.setAccessible(true);
-          String name = field.getName();
           Object val = field.get(obj);
 
-          if (val != null && fieldAllowed(name)) {
+          if (val != null && fieldAllowed(field)) {
+            String name = field.getName();
             jgen.writeFieldName(name);
             write(name, val);
           }
@@ -78,27 +81,24 @@ public class JsonViewSerializer extends JsonSerializer<JsonResultWrapper> {
       jgen.writeEndObject();
     }
 
-    boolean fieldAllowed(String name) {
+    boolean fieldAllowed(Field field) {
+      String name = field.getName();
       String prefix = currentPath.length() > 0 ? currentPath + "." : "";
-      if (result.getIncludes().size() > 0) {
-        return result.getIncludes().contains(prefix + name);
-      } else if (result.getExcludes().size() > 0) {
-        return !result.getExcludes().contains(prefix + name);
-      } else {
-        return true;
-      }
+      return (result.getIncludes().contains(prefix + name) || !annotatedWithIgnore(field)) && !result.getExcludes().contains(prefix + name);
+    }
+
+    //TODO: respect class inheritance
+    boolean annotatedWithIgnore(Field f) {
+      JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
+      JsonIgnoreProperties ignoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
+      return (jsonIgnore != null && jsonIgnore.value()) ||
+          (ignoreProperties != null && Arrays.asList(ignoreProperties.value()).contains(f.getName()));
     }
 
     void write(String fieldName, Object value) throws IOException {
       if (fieldName != null) {
         path.push(fieldName);
-        StringBuilder builder = new StringBuilder();
-        for (String s : path) {
-          builder.append(".");
-          builder.append(s);
-        }
-        currentPath = builder.toString().substring(1);
-        System.out.println(currentPath);
+        updateCurrentPath();
       }
 
       if (value != null && !writePrimitive(value)) {
@@ -107,7 +107,17 @@ public class JsonViewSerializer extends JsonSerializer<JsonResultWrapper> {
 
       if (fieldName != null) {
         path.pop();
+        updateCurrentPath();
       }
+    }
+
+    void updateCurrentPath() {
+      StringBuilder builder = new StringBuilder();
+      for (String s : path) {
+        builder.append(".");
+        builder.append(s);
+      }
+      currentPath = builder.length() > 0 ? builder.toString().substring(1) : "";
     }
   }
 }
