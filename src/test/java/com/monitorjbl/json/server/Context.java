@@ -1,4 +1,4 @@
-package com.monitorjbl.test;
+package com.monitorjbl.json.server;
 
 import com.monitorjbl.json.JsonViewSupportFactoryBean;
 import org.springframework.context.annotation.Bean;

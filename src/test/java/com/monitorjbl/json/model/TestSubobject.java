@@ -1,4 +1,4 @@
-package com.monitorjbl.test;
+package com.monitorjbl.json.model;
 
 public class TestSubobject {
   private String val;

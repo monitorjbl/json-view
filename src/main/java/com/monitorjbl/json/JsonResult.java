@@ -3,6 +3,9 @@ package com.monitorjbl.json;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Allows runtime alteration of JSON responses
+ */
 public class JsonResult {
   private static ThreadLocal<JsonResult> current;
 

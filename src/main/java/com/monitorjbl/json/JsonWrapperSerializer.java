@@ -12,6 +12,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 
@@ -61,23 +62,27 @@ public class JsonWrapperSerializer extends JsonSerializer<JsonWrapper> {
 
     void writeObject(Object obj) throws IOException {
       jgen.writeStartObject();
-      Field[] fields = obj.getClass().getDeclaredFields();
 
-      for (Field field : fields) {
-        try {
-          field.setAccessible(true);
-          Object val = field.get(obj);
+      Class cls = obj.getClass();
+      while (!cls.equals(Object.class)) {
+        Field[] fields = cls.getDeclaredFields();
+        for (Field field : fields) {
+          try {
+            field.setAccessible(true);
+            Object val = field.get(obj);
 
-          if (val != null && fieldAllowed(field)) {
-            String name = field.getName();
-            jgen.writeFieldName(name);
-            write(name, val);
+            if (val != null && fieldAllowed(field)) {
+              String name = field.getName();
+              jgen.writeFieldName(name);
+              write(name, val);
+            }
+          } catch (IllegalArgumentException | IllegalAccessException e) {
+            e.printStackTrace();
           }
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-          e.printStackTrace();
         }
-
+        cls = cls.getSuperclass();
       }
+
       jgen.writeEndObject();
     }
 
