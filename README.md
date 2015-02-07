@@ -112,47 +112,4 @@ public JsonResultSupportFactoryBean views() {
 }
 ```
 
-## Examples
-
-#### Simple object
-```java
-import static com.monitorjbl.json.Match.match;
-
-@RequestMapping(method = RequestMethod.GET, value = "/user/{id}")
-@ResponseBody
-public void getUser(@PathVariable("id") Long id) {
-  User user = service.get(id);
-
-  if (!isAdmin()) {
-    JsonResult.with(user)
-        .onClass(User.class, match()
-          .exclude("owner")
-          .exclude("userDetails"));
-  } else {
-    JsonResult.with(user);
-  }
-}
-```
-
-#### List of objects
-```java
-import static com.monitorjbl.json.Match.match;
-
-@RequestMapping(method = RequestMethod.GET, value = "/user")
-@ResponseBody
-public void getUsers() {
-  List<User> users = service.list();
-
-  if (!isAdmin()) {
-    JsonResult.with(user)
-        .onClass(User.class, match()
-          .exclude("owner")
-          .exclude("userDetails"));
-  } else {
-    JsonResult.with(user);
-  }
-}
-```
-
-
 
