@@ -7,6 +7,29 @@
   <groupId>com.monitorjbl</groupId>
   <artifactId>spring-json-view</artifactId>
   <version>0.1-SNAPSHOT</version>
+  <name>JSON Views for Spring MVC</name>
+  <description>Provides programmatic JSON response manipulation for Spring MVC</description>
+  <url>https://github.com/monitorjbl/spring-json-view</url>
+
+  <developers>
+    <developer>
+      <id>monitorjbl</id>
+      <name>Taylor Jones</name>
+      <email>monitorjbl@gmail.com</email>
+    </developer>
+  </developers>
+
+  <licenses>
+    <license>
+      <name>GPLv2</name>
+      <url>https://raw.githubusercontent.com/monitorjbl/spring-json-view/master/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/monitorjbl/spring-json-view.git</url>
+  </scm>
 
   <build>
     <plugins>
@@ -20,6 +43,17 @@
       </plugin>
     </plugins>
   </build>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+    </repository>
+  </distributionManagement>
 
   <dependencies>
     <dependency>
