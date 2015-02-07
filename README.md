@@ -107,9 +107,14 @@ To use it, simply add this project to your classpath using your build tool of ch
 Then, just add it to your context as a bean:
 
 ```java
-@Bean
-public JsonResultSupportFactoryBean views() {
-  return new JsonResultSupportFactoryBean();
+@EnableWebMvc
+@Configuration
+@ComponentScan({"com.monitorjbl"})
+public class Context extends WebMvcConfigurerAdapter {
+  @Bean
+  public JsonResultSupportFactoryBean views() {
+    return new JsonResultSupportFactoryBean();
+  }
 }
 ```
 
