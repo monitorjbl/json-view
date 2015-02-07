@@ -45,7 +45,7 @@ public class JsonController {
     obj.setSub(new TestSubobject("qwerqwerqwerqw"));
 
     JsonResult.with(obj)
-        .onClass(TestObject.class, Match.on()
+        .onClass(TestObject.class, Match.match()
             .exclude("int1")
             .include("ignoredDirect"));
   }
@@ -66,7 +66,7 @@ public class JsonController {
     list.add(obj);
 
     JsonResult.with(list)
-        .onClass(TestObject.class, Match.on()
+        .onClass(TestObject.class, Match.match()
             .exclude("int1")
             .include("ignoredDirect"));
   }

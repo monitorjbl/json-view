@@ -40,6 +40,8 @@ public class JsonResultSerializer extends JsonSerializer<JsonResult> {
         jgen.writeString((String) obj);
       } else if (Integer.class.isInstance(obj)) {
         jgen.writeNumber((Integer) obj);
+      } else if (Long.class.isInstance(obj)) {
+        jgen.writeNumber((Long) obj);
       } else if (Double.class.isInstance(obj)) {
         jgen.writeNumber((Double) obj);
       } else if (Float.class.isInstance(obj)) {
@@ -93,7 +95,7 @@ public class JsonResultSerializer extends JsonSerializer<JsonResult> {
             field.setAccessible(true);
             Object val = field.get(obj);
 
-            if (val != null && fieldAllowed(field)) {
+            if (val != null && fieldAllowed(field, obj.getClass())) {
               String name = field.getName();
               jgen.writeFieldName(name);
               write(name, val);
@@ -108,18 +110,23 @@ public class JsonResultSerializer extends JsonSerializer<JsonResult> {
       jgen.writeEndObject();
     }
 
-    boolean fieldAllowed(Field field) {
+    boolean fieldAllowed(Field field, Class declaringClass) {
       String name = field.getName();
       String prefix = currentPath.length() > 0 ? currentPath + "." : "";
 
-      //if there is a match specifically for this class, use it
-      Match match = result.getMatch(field.getDeclaringClass());
+      //search for matcher
+      Match match = null;
+      Class cls = declaringClass;
+      while (!cls.equals(Object.class) && match == null) {
+        match = result.getMatch(cls);
+        cls = cls.getSuperclass();
+      }
       if (match == null) {
         match = currentMatch;
       }
 
+      //if there is a match, respect it
       if (match != null) {
-        //if there is a match, respect it
         currentMatch = match;
         return (match.getIncludes().contains(prefix + name) || !annotatedWithIgnore(field)) && !match.getExcludes().contains(prefix + name);
       } else {
@@ -128,7 +135,6 @@ public class JsonResultSerializer extends JsonSerializer<JsonResult> {
       }
     }
 
-    //TODO: respect class inheritance
     boolean annotatedWithIgnore(Field f) {
       JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
       JsonIgnoreProperties ignoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);

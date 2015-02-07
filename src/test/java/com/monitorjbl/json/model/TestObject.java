@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 
-@JsonIgnoreProperties({"ignoreIndirect"})
+@JsonIgnoreProperties({"ignoredIndirect"})
 public class TestObject {
   private String str1;
   private String str2;
   @JsonIgnore
   private String ignoredDirect;
-  private String ignoreIndirect;
+  private String ignoredIndirect;
   private int int1;
   private TestSubobject sub;
   private List<String> list;
@@ -41,12 +41,12 @@ public class TestObject {
     this.ignoredDirect = ignoredDirect;
   }
 
-  public String getIgnoreIndirect() {
-    return ignoreIndirect;
+  public String getIgnoredIndirect() {
+    return ignoredIndirect;
   }
 
-  public void setIgnoreIndirect(String ignoreIndirect) {
-    this.ignoreIndirect = ignoreIndirect;
+  public void setIgnoredIndirect(String ignoredIndirect) {
+    this.ignoredIndirect = ignoredIndirect;
   }
 
   public int getInt1() {

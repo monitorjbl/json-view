@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.monitorjbl.json.model.TestChildObject;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestSubobject;
+import com.monitorjbl.json.model.TestUnrelatedObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,12 +51,12 @@ public class JsonResultSerializerTest {
   public void testJsonIgnoreProperties() throws IOException {
     TestObject ref = new TestObject();
     ref.setInt1(1);
-    ref.setIgnoreIndirect("ignore me");
+    ref.setIgnoredIndirect("ignore me");
     String serialized = sut.writeValueAsString(JsonResult.with(ref));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
     assertNotNull(obj.get("int1"));
     assertEquals(ref.getInt1(), obj.get("int1"));
-    assertNull(obj.get("ignoreIndirect"));
+    assertNull(obj.get("ignoredIndirect"));
   }
 
   @Test
@@ -67,7 +68,7 @@ public class JsonResultSerializerTest {
     ref.setList(Arrays.asList("red", "blue", "green"));
     ref.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
     String serialized = sut.writeValueAsString(
-        JsonResult.with(ref).onClass(TestObject.class, Match.on()
+        JsonResult.with(ref).onClass(TestObject.class, Match.match()
             .exclude("str2")
             .exclude("sub.val")
             .include("ignoredDirect")));
@@ -83,11 +84,11 @@ public class JsonResultSerializerTest {
     TestChildObject ref = new TestChildObject();
     ref.setChildField("green");
     ref.setIgnoredDirect("ignore me");
-    ref.setIgnoreIndirect("ignore me too");
+    ref.setIgnoredIndirect("ignore me too");
     ref.setArray(new String[]{"pizza", "french fry"});
 
     String serialized = sut.writeValueAsString(
-        JsonResult.with(ref).onClass(TestObject.class, Match.on()
+        JsonResult.with(ref).onClass(TestObject.class, Match.match()
             .exclude("str2")
             .exclude("sub.val")
             .include("ignoredDirect")));
@@ -100,7 +101,26 @@ public class JsonResultSerializerTest {
   }
 
   @Test
-  public void testList() throws IOException {
+  public void testFieldSpecificity() throws IOException {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    ref.setStr2("asdf");
+    ref.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
+    String serialized = sut.writeValueAsString(
+        JsonResult.with(ref)
+            .onClass(TestObject.class, Match.match()
+                .exclude("str2")
+                .exclude("sub.val"))
+            .onClass(TestSubobject.class, Match.match()
+                .exclude("sub")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("sub"));
+    assertEquals(ref.getSub().getVal(), ((Map) obj.get("sub")).get("val"));
+  }
+
+  @Test
+  public void testListWithSingleClass() throws IOException {
     TestObject ref1 = new TestObject();
     ref1.setInt1(1);
     ref1.setStr2("asdf");
@@ -118,7 +138,7 @@ public class JsonResultSerializerTest {
     List<TestObject> refList = Arrays.asList(ref1, ref2);
 
     String serialized = sut.writeValueAsString(
-        JsonResult.with(refList).onClass(TestObject.class, Match.on()
+        JsonResult.with(refList).onClass(TestObject.class, Match.match()
             .exclude("str2")
             .exclude("sub.val")
             .include("ignoredDirect")));
@@ -151,6 +171,54 @@ public class JsonResultSerializerTest {
       }
 
     }
-
   }
+
+  @Test
+  public void testListWithMultipleClasses() throws IOException {
+    TestObject ref1 = new TestObject();
+    ref1.setInt1(1);
+    ref1.setStr2("asdf");
+    ref1.setArray(new String[]{"apple", "banana"});
+    ref1.setList(Arrays.asList("red", "blue", "green"));
+    ref1.setIgnoredIndirect("ignore me too");
+    ref1.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
+
+    TestChildObject ref2 = new TestChildObject();
+    ref2.setChildField("green");
+    ref2.setIgnoredDirect("ignore me");
+    ref2.setArray(new String[]{"pizza", "french fry"});
+
+    TestUnrelatedObject ref3 = new TestUnrelatedObject();
+    ref3.setId(3L);
+    ref3.setName("xxzcvxc");
+
+    String serialized = sut.writeValueAsString(
+        JsonResult.with(Arrays.asList(ref1, ref2, ref3))
+            .onClass(TestObject.class, Match.match()
+                .exclude("str2")
+                .include("ignoredIndirect"))
+            .onClass(TestChildObject.class, Match.match()
+                .exclude("array")
+                .include("ignoredDirect"))
+            .onClass(TestUnrelatedObject.class, Match.match()
+                .exclude("name")));
+    List<Map<String, Object>> output = sut.readValue(serialized, ArrayList.class);
+
+    assertEquals(3, output.size());
+
+    Map<String, Object> t1 = output.get(0);
+    assertEquals(ref1.getInt1(), t1.get("int1"));
+    assertNull(t1.get("srt2"));
+    assertEquals(ref1.getIgnoredIndirect(), t1.get("ignoredIndirect"));
+
+    Map<String, Object> t2 = output.get(1);
+    assertEquals(ref2.getChildField(), t2.get("childField"));
+    assertNull(t2.get("array"));
+    assertEquals(ref2.getIgnoredDirect(), t2.get("ignoredDirect"));
+
+    Map<String, Object> t3 = output.get(2);
+    assertEquals(ref3.getId().longValue(), ((Integer) t3.get("id")).longValue());
+    assertNull(t3.get("name"));
+  }
+
 }

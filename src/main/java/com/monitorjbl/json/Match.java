@@ -29,7 +29,15 @@ public class Match {
     return excludes;
   }
 
-  public static Match on() {
+  public static Match match() {
     return new Match();
+  }
+
+  @Override
+  public String toString() {
+    return "Match{" +
+        "includes=" + includes +
+        ", excludes=" + excludes +
+        '}';
   }
 }
