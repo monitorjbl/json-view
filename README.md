@@ -31,8 +31,30 @@ public void getMyObjects() {
     //get a list of the objects
     List<MyObject> list = myObjectService.list();
 
-    //exclude expensive field 
+    //exclude expensive field
     JsonResult.with(list).onClass(MyObject.class, Match.on().exclude("contains"));
+}
+```
+
+## Usage
+
+
+To use it, simply add this project to your classpath using your build tool of choice. Here's a Maven example:
+
+```xml
+<dependency>
+    <groupId>com.monitorjbl</groupId>
+    <artifactId>spring-json-view</artifactId>
+    <version>1.0-SNAPSHOT</version>
+</dependency>
+```
+
+Then, just add it to your context as a bean:
+
+```java
+@Bean
+public JsonResultSupportFactoryBean views() {
+  return new JsonResultSupportFactoryBean();
 }
 ```
 
@@ -74,13 +96,5 @@ public void getUsers() {
 }
 ```
 
-To use it, simply add this to your context as a bean:
-
-```java
-@Bean
-public JsonResultSupportFactoryBean views() {
-  return new JsonResultSupportFactoryBean();
-}
-```
 
 
