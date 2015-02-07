@@ -7,14 +7,13 @@ import java.util.Map;
  * Allows runtime alteration of JSON responses
  */
 public class JsonView {
-  private static ThreadLocal<JsonView> current;
+  private static final  ThreadLocal<JsonView> current = new ThreadLocal<>();
 
   private final Object value;
   private final Map<Class<?>, Match> matches = new HashMap<>();
 
   private JsonView(Object value) {
     this.value = value;
-    current = new ThreadLocal<>();
     current.set(this);
   }
 

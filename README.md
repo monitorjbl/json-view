@@ -2,7 +2,7 @@
 
 Ever needed to programmatically include or exclude a field from your Spring MVC response data? Well, if you have then you probably know by now that it's very difficult to do. Spring is by nature very declarative (annotations for everything!), so doing something programmatically gets ugly fast.
 
-While the declarative style certainly has many benefits (compile-time checking, ease of refactoring, etc.), the inability to simply and programmatically control your responses is one major downside. Inspired by [VRaptor](http://www.vraptor.org/), this plugin provides an easy way to alter the JSON output on the fly.
+While the declarative style certainly has many benefits (compile-time checking, ease of refactoring, etc.), the inability to simply and programmatically control your responses is one major downside. Inspired by [VRaptor](http://www.vraptor.org/), this library provides an easy way to alter the JSON output on the fly.
 
 ## Use cases
 
@@ -27,7 +27,7 @@ If you were to return a list of `MyObject`, you may not want to show the `contai
 
 The typically suggested pattern suggests using the `@JsonIgnore` annotation on the field. However, this effectively makes this field permanently ignored everywhere in your app. What if you want only don't want to show this field when dealing with a single instance rather than a `List`?
 
-Using `JsonView` allows you to filter this field out quickly and easily in your controller methods:
+Using `JsonView` allows you to filter this field out quickly and easily in your controller methods (note that your method return value must be `void`):
 
 ```java
 import static com.monitorjbl.json.Match.match;
@@ -173,4 +173,15 @@ public class Context extends WebMvcConfigurerAdapter {
 }
 ```
 
+## Design
 
+Basic design information about this library.
+
+#### Serializer
+As stated above, the heart of this library is the custom Jackson serializer. The [JsonViewSerializer](src/main/java/com/monitorjbl/json/JsonViewSerializer.java) class interprets both the object to serialize and the include/exclude config to write your object as a String. Pretty much everything else is simply to integrate it nicely with Spring MVC.
+
+#### Spring MVC Integration
+The [JsonView](src/main/java/com/monitorjbl/json/JsonView.java) class that you refer to stores a `ThreadLocal` var containing your returned object and all configuration information. The `ThreadLocal` is used to store the result so your method doesn't have to return a particular type value. If you have used `JsonView` at all in your current thread, this value will be set and your response will generated from it.
+
+#### External use information
+Use of the JsonViewSerializer outside of the Spring MVC integration is fine, however there will still be a `ThreadLocal` reference to your object and config. If this cause an issue for you, you can simply call `JsonView.with()` again to reset the reference.
