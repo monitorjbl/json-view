@@ -6,6 +6,10 @@ While the declarative style certainly has many benefits (compile-time checking, 
 
 ## Use cases
 
+The potential use cases for this are pretty varied, but they typically boil down to two things: exclusion and inclusion of class fields.
+
+### Exclusion
+
 The most common use case for this is when dealing with Hibernate POJOs. If you have an object with an expensive field on it, you may not always want to return it. Let's say that you've got this class:
 
 ```java
@@ -39,7 +43,24 @@ public void getMyObjects() {
 }
 ```
 
-You can also ignore fields on classes referenced by a class! Simply reference the field in a dot-path to do this. In the below example, the field `id` on the class `MySmallObject` is ignored:
+### Inclusion
+
+The inverse of this is also possible. For example, let's say this was your class instead:
+
+```java
+public class MyObject{
+  private Long id;
+  private String name;
+  private MySmallObject smallObj;
+  @JsonIgnore
+  private List<MyBigObject> contains;       //expensive list with many entries
+
+  //getters and setters and/or builder
+}
+```
+
+You can programmatically include fields that are ignored by default:
+
 
 ```java
 import static com.monitorjbl.json.Match.match;
@@ -51,6 +72,23 @@ public void getMyObjects() {
     List<MyObject> list = myObjectService.list();
 
     //exclude expensive field
+    JsonResult.with(list).onClass(MyObject.class, match().include("contains"));
+}
+```
+
+### Advanced
+
+You can also ignore fields on classes referenced by a class! Simply reference the field in a dot-path to do this. In the below example, the field `id` on the class `MySmallObject` is ignored:
+
+```java
+import static com.monitorjbl.json.Match.match;
+
+@RequestMapping(method = RequestMethod.GET, value = "/myObject")
+@ResponseBody
+public void getMyObjects() {
+    //get a list of the objects
+    List<MyObject> list = myObjectService.list();
+
     JsonResult.with(list).onClass(MyObject.class, match()
       .exclude("smallObj.id")
       .exclude("contains"));
@@ -68,7 +106,6 @@ public void getMyObjects() {
     //get a list of the objects
     List<MyObject> list = myObjectService.list();
 
-    //exclude expensive field
     JsonResult.with(list)
       .onClass(MyObject.class, match()
         .exclude("contains"))
