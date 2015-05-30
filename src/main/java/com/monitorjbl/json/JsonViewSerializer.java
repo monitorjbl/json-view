@@ -151,8 +151,25 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       //if there is a match, respect it
       if (match != null) {
         currentMatch = match;
-        return (containsMatchingPattern(match.getIncludes(), prefix + name) ||
-            !annotatedWithIgnore(field)) && !containsMatchingPattern(match.getExcludes(), prefix + name);
+        int included = containsMatchingPattern(match.getIncludes(), prefix + name);
+        int excluded = containsMatchingPattern(match.getExcludes(), prefix + name);
+        /*
+        The logic for this is a little complex. We're dealing with ternary logic to
+        properly handle wildcard matches. We want matches made with wildcards to be
+        overruled by matches without them.
+         */
+
+        if (included == 1) {
+          return true;
+        } else if (excluded == 1) {
+          return false;
+        } else if (included == 0) {
+          return true;
+        } else if(excluded == 0){
+          return false;
+        }else {
+          return !annotatedWithIgnore(field);
+        }
       } else {
         //else, respect JsonIgnore only
         return !annotatedWithIgnore(field);
@@ -172,14 +189,26 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       return hasJsonIgnoreCache.get(f);
     }
 
-    boolean containsMatchingPattern(List<String> values, String pattern) {
+    /**
+     * Returns one of the following values:
+     * <pre>
+     * -1: No match found
+     *  0: Wildcard-based match
+     *  1: Non-wildcard match
+     * </pre>
+     *
+     * @param values
+     * @param pattern
+     * @return
+     */
+    int containsMatchingPattern(List<String> values, String pattern) {
       for (String val : values) {
-        val = val.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*");
-        if (Pattern.compile(val).matcher(pattern).matches()) {
-          return true;
+        String replaced = val.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*");
+        if (Pattern.compile(replaced).matcher(pattern).matches()) {
+          return replaced.contains("*") ? 0 : 1;
         }
       }
-      return false;
+      return -1;
     }
 
     void write(String fieldName, Object value) throws IOException {

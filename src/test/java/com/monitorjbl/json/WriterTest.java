@@ -5,13 +5,13 @@ import com.monitorjbl.json.JsonViewSerializer.JsonWriter;
 import com.monitorjbl.json.model.TestObject;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
@@ -33,42 +33,42 @@ public class WriterTest {
   @Test
   public void testContainsMatchingPattern_basic() {
     List<String> patterns = newArrayList("field1", "field2");
-    assertTrue(sut.containsMatchingPattern(patterns, "field1"));
-    assertTrue(sut.containsMatchingPattern(patterns, "field2"));
-    assertFalse(sut.containsMatchingPattern(patterns, "field3"));
+    assertEquals(1, sut.containsMatchingPattern(patterns, "field1"));
+    assertEquals(1, sut.containsMatchingPattern(patterns, "field2"));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "field3"));
   }
 
   @Test
   public void testContainsMatchingPattern_wildcard() {
     List<String> patterns = newArrayList("field*");
-    assertTrue(sut.containsMatchingPattern(patterns, "field1"));
-    assertTrue(sut.containsMatchingPattern(patterns, "field2"));
-    assertFalse(sut.containsMatchingPattern(patterns, "val1"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field1"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field2"));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "val1"));
   }
 
   @Test
   public void testContainsMatchingPattern_wildcardAll() {
     List<String> patterns = newArrayList("*");
-    assertTrue(sut.containsMatchingPattern(patterns, "field1"));
-    assertTrue(sut.containsMatchingPattern(patterns, "field2"));
-    assertTrue(sut.containsMatchingPattern(patterns, "val1"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field1"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field2"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "val1"));
   }
 
   @Test
   public void testContainsMatchingPattern_wildcardInChildPath() {
     List<String> patterns = newArrayList("*.green");
-    assertTrue(sut.containsMatchingPattern(patterns, "field1.green"));
-    assertFalse(sut.containsMatchingPattern(patterns, "field2.blue"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field1.green"));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "field2.blue"));
   }
 
   @Test
   public void testContainsMatchingPattern_wildcardInComplexPath() {
     List<String> patterns = newArrayList("*.green.*");
-    assertFalse(sut.containsMatchingPattern(patterns, "field1.green"));
-    assertFalse(sut.containsMatchingPattern(patterns, "field2.blue"));
-    assertTrue(sut.containsMatchingPattern(patterns, "field1.green.id"));
-    assertFalse(sut.containsMatchingPattern(patterns, "field1.blue.id"));
-    assertTrue(sut.containsMatchingPattern(patterns, "field2.green.name"));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "field1.green"));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "field2.blue"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field1.green.id"));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "field1.blue.id"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field2.green.name"));
   }
 
   @Test

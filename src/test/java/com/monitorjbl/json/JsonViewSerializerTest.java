@@ -294,4 +294,52 @@ public class JsonViewSerializerTest {
     assertEquals(ref.getMapWithIntKeys().get(2), map.get("2"));
   }
 
+  @Test
+  public void testBlanketExclude() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    ref.setStr1("str1");
+    ref.setStr2("str2");
+    ref.setMapOfObjects(ImmutableMap.of(
+        "key1", new TestSubobject("test1"),
+        "key2", new TestSubobject("test2", new TestSubobject("test3"))
+    ));
+
+    String serialized = sut.writeValueAsString(
+        JsonView.with(ref)
+            .onClass(TestObject.class, Match.match()
+                .exclude("*")
+                .include("str2")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(ref.getStr2(), obj.get("str2"));
+    assertNull(obj.get("str1"));
+    assertNull(obj.get("mapWithIntKeys"));
+    assertNull(obj.get("int1"));
+  }
+
+  @Test
+  public void testBlanketInclude() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    ref.setStr1("str1");
+    ref.setStr2("str2");
+    ref.setIgnoredDirect("ignoredDirect");
+    ref.setIgnoredIndirect("ignoredIndirect");
+    ref.setMapOfObjects(ImmutableMap.of(
+        "key1", new TestSubobject("test1"),
+        "key2", new TestSubobject("test2", new TestSubobject("test3"))
+    ));
+
+    String serialized = sut.writeValueAsString(
+        JsonView.with(ref)
+            .onClass(TestObject.class, Match.match()
+                .include("*")
+                .exclude("str2")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(ref.getStr1(), obj.get("str1"));
+    assertNull(obj.get("str2"));
+    assertEquals(ref.getIgnoredIndirect(), obj.get("ignoredIndirect"));
+    assertEquals(ref.getInt1(), obj.get("int1"));
+    assertNotNull(obj.get("mapOfObjects"));
+  }
 }
