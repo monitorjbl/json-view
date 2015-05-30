@@ -78,7 +78,26 @@ public void getMyObjects() {
 }
 ```
 
-### Advanced
+## Advanced
+
+**Wildcard Matchers**
+
+This is very handy if you have a limited
+
+```java
+import com.monitorjbl.json.JsonView;
+import static com.monitorjbl.json.Match.match;
+
+List<MyObject> list = myObjectService.list();
+
+JsonView.with(list).onClass(MyObject.class, match()
+      .exclude("*")
+      .include("name"));
+```
+
+Wildcards are implemented with trenary logic. If you specify a matcher without a wildcard, it will supercede any other matchers with a wildcard.
+
+**Class mMtchers**
 
 You can also ignore fields on classes referenced by a class! Simply reference the field in a dot-path to do this. In the below example, the field `id` on the class `MySmallObject` is ignored:
 
@@ -86,16 +105,11 @@ You can also ignore fields on classes referenced by a class! Simply reference th
 import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 
-@RequestMapping(method = RequestMethod.GET, value = "/myObject")
-@ResponseBody
-public void getMyObjects() {
-    //get a list of the objects
-    List<MyObject> list = myObjectService.list();
+List<MyObject> list = myObjectService.list();
 
-    JsonView.with(list).onClass(MyObject.class, match()
-      .exclude("smallObj.id")
-      .exclude("contains"));
-}
+JsonView.with(list).onClass(MyObject.class, match()
+    .exclude("smallObj.id")
+    .exclude("contains"));
 ```
 
 Alternatively, you can make a separate matcher for other classes:
@@ -104,19 +118,17 @@ Alternatively, you can make a separate matcher for other classes:
 import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 
-@RequestMapping(method = RequestMethod.GET, value = "/myObject")
-@ResponseBody
-public void getMyObjects() {
-    //get a list of the objects
-    List<MyObject> list = myObjectService.list();
+  //get a list of the objects
+  List<MyObject> list = myObjectService.list();
 
-    JsonView.with(list)
-      .onClass(MyObject.class, match()
-        .exclude("contains"))
-      .onClass(MySmallObject.class, match()
-        .exclude("id");
-}
+  JsonView.with(list)
+    .onClass(MyObject.class, match()
+      .exclude("contains"))
+    .onClass(MySmallObject.class, match()
+      .exclude("id");
 ```
+
+**Use outside of Spring MVC**
 
 All this functionality really boils down to a custom Jackson serializer. If you'd like to use it outside of Spring, you certainly can! Just initialize a standard Jackson `ObjectMapper` class and tell it to serialize your object like so:
 
