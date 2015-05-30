@@ -64,7 +64,7 @@ public class JsonController {
         .onClass(TestObject.class, Match.match()
             .exclude("int1")
             .include("ignoredDirect"))
-        .build();
+        .returnValue();
   }
 
   @RequestMapping(method = RequestMethod.GET, value = "/list")
