@@ -3,7 +3,6 @@ package com.monitorjbl.json;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
@@ -14,39 +13,55 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
+  private final int cacheSize;
 
-  @Override
-  public void serialize(JsonView result, JsonGenerator jgen, SerializerProvider serializers) throws IOException, JsonProcessingException {
-    new Writer(jgen, result).write(null, result.getValue());
+  public JsonViewSerializer() {
+    this(1000);
   }
 
-  private static class Writer {
+  public JsonViewSerializer(int cacheSize) {
+    this.cacheSize = cacheSize;
+  }
+
+  @Override
+  public void serialize(JsonView result, JsonGenerator jgen, SerializerProvider serializers) throws IOException {
+    new JsonWriter(jgen, result, cacheSize).write(null, result.getValue());
+  }
+
+  static class JsonWriter {
+    //caches the results of the @JsonIgnore test to cut down on expensive reflection calls
+    static final Map<Field, Boolean> hasJsonIgnoreCache = new ConcurrentHashMap<>();
+
     Stack<String> path = new Stack<>();
     String currentPath = "";
     Match currentMatch = null;
 
-    JsonGenerator jgen;
-    JsonView result;
+    final JsonGenerator jgen;
+    final JsonView result;
+    final int cacheSize;
 
-    public Writer(JsonGenerator jgen, JsonView result) {
+    JsonWriter(JsonGenerator jgen, JsonView result, int cacheSize) {
       this.jgen = jgen;
       this.result = result;
+      this.cacheSize = cacheSize;
     }
 
     boolean writePrimitive(Object obj) throws IOException {
       if (obj instanceof String) {
         jgen.writeString((String) obj);
-      } else if (Integer.class.isInstance(obj)) {
+      } else if (obj instanceof Integer) {
         jgen.writeNumber((Integer) obj);
-      } else if (Long.class.isInstance(obj)) {
+      } else if (obj instanceof Long) {
         jgen.writeNumber((Long) obj);
-      } else if (Double.class.isInstance(obj)) {
+      } else if (obj instanceof Double) {
         jgen.writeNumber((Double) obj);
-      } else if (Float.class.isInstance(obj)) {
+      } else if (obj instanceof Float) {
         jgen.writeNumber((Float) obj);
-      } else if (Boolean.class.isInstance(obj)) {
+      } else if (obj instanceof Boolean) {
         jgen.writeBoolean((Boolean) obj);
       } else {
         return false;
@@ -66,7 +81,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
         jgen.writeStartArray();
         for (Object o : iter) {
-          new Writer(jgen, result).write(null, o);
+          new JsonWriter(jgen, result, cacheSize).write(null, o);
         }
         jgen.writeEndArray();
       } else {
@@ -83,7 +98,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         jgen.writeStartObject();
         for (Object key : map.keySet()) {
           jgen.writeFieldName(key.toString());
-          new Writer(jgen, result).write(null, map.get(key));
+          new JsonWriter(jgen, result, cacheSize).write(null, map.get(key));
         }
         jgen.writeEndObject();
       } else {
@@ -136,7 +151,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       //if there is a match, respect it
       if (match != null) {
         currentMatch = match;
-        return (match.getIncludes().contains(prefix + name) || !annotatedWithIgnore(field)) && !match.getExcludes().contains(prefix + name);
+        return (containsMatchingPattern(match.getIncludes(), prefix + name) ||
+            !annotatedWithIgnore(field)) && !containsMatchingPattern(match.getExcludes(), prefix + name);
       } else {
         //else, respect JsonIgnore only
         return !annotatedWithIgnore(field);
@@ -144,10 +160,26 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     boolean annotatedWithIgnore(Field f) {
-      JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
-      JsonIgnoreProperties ignoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
-      return (jsonIgnore != null && jsonIgnore.value()) ||
-          (ignoreProperties != null && Arrays.asList(ignoreProperties.value()).contains(f.getName()));
+      if (!hasJsonIgnoreCache.containsKey(f)) {
+        JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
+        JsonIgnoreProperties ignoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
+        if (hasJsonIgnoreCache.size() > cacheSize) {
+          hasJsonIgnoreCache.remove(hasJsonIgnoreCache.keySet().iterator().next());
+        }
+        hasJsonIgnoreCache.put(f, (jsonIgnore != null && jsonIgnore.value()) ||
+            (ignoreProperties != null && Arrays.asList(ignoreProperties.value()).contains(f.getName())));
+      }
+      return hasJsonIgnoreCache.get(f);
+    }
+
+    boolean containsMatchingPattern(List<String> values, String pattern) {
+      for (String val : values) {
+        val = val.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*");
+        if (Pattern.compile(val).matcher(pattern).matches()) {
+          return true;
+        }
+      }
+      return false;
     }
 
     void write(String fieldName, Object value) throws IOException {
