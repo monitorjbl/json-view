@@ -1,8 +1,8 @@
 package com.monitorjbl.json.server;
 
 import com.google.common.collect.ImmutableMap;
-import com.monitorjbl.json.Match;
 import com.monitorjbl.json.JsonView;
+import com.monitorjbl.json.Match;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestSubobject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +48,23 @@ public class JsonController {
         .onClass(TestObject.class, Match.match()
             .exclude("int1")
             .include("ignoredDirect"));
+  }
+
+  @RequestMapping(method = RequestMethod.GET, value = "/bean/withReturnValue")
+  @ResponseBody
+  public TestObject beanWithReturn() {
+    TestObject obj = new TestObject();
+    obj.setInt1(1);
+    obj.setIgnoredDirect("ignored");
+    obj.setStr2("asdf");
+    obj.setList(Arrays.asList("red", "blue", "green"));
+    obj.setSub(new TestSubobject("qwerqwerqwerqw"));
+
+    return JsonView.with(obj)
+        .onClass(TestObject.class, Match.match()
+            .exclude("int1")
+            .include("ignoredDirect"))
+        .build();
   }
 
   @RequestMapping(method = RequestMethod.GET, value = "/list")

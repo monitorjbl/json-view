@@ -7,7 +7,7 @@ import java.util.Map;
  * Allows runtime alteration of JSON responses
  */
 public class JsonView {
-  private static final  ThreadLocal<JsonView> current = new ThreadLocal<>();
+  private static final ThreadLocal<JsonView> current = new ThreadLocal<>();
 
   private final Object value;
   private final Map<Class<?>, Match> matches = new HashMap<>();
@@ -28,6 +28,11 @@ public class JsonView {
   public JsonView onClass(Class<?> cls, Match match) {
     matches.put(cls, match);
     return this;
+  }
+
+  @SuppressWarnings("unchecked")
+  public <E> E build() {
+    return (E) value;
   }
 
   public static JsonView with(Object value) {

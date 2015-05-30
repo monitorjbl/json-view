@@ -46,6 +46,15 @@ public class ReturnValueTest {
 
   @Test
   @SuppressWarnings("unchecked")
+  public void testSimpleWithReturnValue() throws IOException {
+    Map<String, Object> map = new ObjectMapper().readValue(Request.Get("http://localhost:8080/bean/withReturnValue").execute().returnContent().asStream(),
+        HashMap.class);
+    assertEquals("ignored", map.get("ignoredDirect"));
+    assertNull(map.get("int1"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
   public void testList() throws IOException {
     List<Map<String, Object>> list = new ObjectMapper().readValue(Request.Get("http://localhost:8080/list").execute().returnContent().asStream(), ArrayList.class);
 

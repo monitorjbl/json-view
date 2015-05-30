@@ -24,7 +24,7 @@ public class JsonViewReturnValueHandler implements HandlerMethodReturnValueHandl
   @Override
   public void handleReturnValue(Object returnValue, MethodParameter returnType, ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
     Object val = returnValue;
-    if (void.class.equals(returnType.getMethod().getReturnType()) && JsonView.get() != null) {
+    if (JsonView.get() != null) {
       val = JsonView.get();
     }
     delegate.handleReturnValue(val, returnType, mavContainer, webRequest);
