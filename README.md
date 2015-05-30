@@ -101,7 +101,7 @@ But wait, there's more!
 
 ### Wildcard Matchers
 
-This is very handy if you have a limited
+This is very handy if you have a limited set of fields you actually want to include.
 
 ```java
 import com.monitorjbl.json.JsonView;
