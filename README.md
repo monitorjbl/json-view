@@ -4,7 +4,7 @@ Ever needed to programmatically include or exclude a field from your Spring MVC 
 
 While the declarative style certainly has many benefits (compile-time checking, ease of refactoring, etc.), the inability to simply and programmatically control your responses is one major downside. Inspired by [VRaptor](http://www.vraptor.org/), this library provides an easy way to alter the JSON output on the fly.
 
-## Use cases
+## Typical use cases
 
 The potential use cases for this library are pretty varied, but here are a few to get you started.
 
@@ -78,9 +78,28 @@ public void getMyObjects() {
 }
 ```
 
-## Advanced
+### Return value
 
-**Wildcard Matchers**
+While the return value of the method isn't actually used with this library, documentation libraries like Swagger may depend on it being present. To make life simpler, you can simply tack on a `.returnValue()` to the end to grab the object you're manipulating:
+
+```java
+import com.monitorjbl.json.JsonView;
+import static com.monitorjbl.json.Match.match;
+
+@RequestMapping(method = RequestMethod.GET, value = "/myObject")
+@ResponseBody
+public List<MyObject> getMyObjects() {
+    return JsonView.with(service.list()).onClass(MyObject.class, match()
+        .include("contains")
+        .exclude("name")).returnValue();
+}
+```
+
+## Advanced use cases
+
+But wait, there's more!
+
+### Wildcard Matchers
 
 This is very handy if you have a limited
 
@@ -97,7 +116,7 @@ JsonView.with(list).onClass(MyObject.class, match()
 
 Wildcards are implemented with trenary logic. If you specify a matcher without a wildcard, it will supercede any other matchers with a wildcard.
 
-**Class mMtchers**
+### Class Matchers
 
 You can also ignore fields on classes referenced by a class! Simply reference the field in a dot-path to do this. In the below example, the field `id` on the class `MySmallObject` is ignored:
 
@@ -128,7 +147,7 @@ import static com.monitorjbl.json.Match.match;
       .exclude("id");
 ```
 
-**Use outside of Spring MVC**
+### Use outside of Spring MVC
 
 All this functionality really boils down to a custom Jackson serializer. If you'd like to use it outside of Spring, you certainly can! Just initialize a standard Jackson `ObjectMapper` class and tell it to serialize your object like so:
 
