@@ -68,7 +68,7 @@ public class JsonViewSerializerPerformance {
     ref.setInt1(RandomUtils.nextInt(0, 100000000));
     ref.setIgnoredDirect(RandomStringUtils.random(16));
     ref.setStr2(RandomStringUtils.random(4));
-    ref.setArray(new String[]{RandomStringUtils.random(7), RandomStringUtils.random(5)});
+    ref.setStringArray(new String[]{RandomStringUtils.random(7), RandomStringUtils.random(5)});
     ref.setList(newArrayList(RandomStringUtils.random(3), RandomStringUtils.random(14)));
     ref.setMapOfObjects(ImmutableMap.of(RandomStringUtils.random(14), new TestSubobject()));
     TestSubobject sub = new TestSubobject();

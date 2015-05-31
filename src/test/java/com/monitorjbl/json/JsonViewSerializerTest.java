@@ -3,6 +3,8 @@ package com.monitorjbl.json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.BaseEncoding;
+import com.google.common.primitives.Ints;
 import com.monitorjbl.json.model.TestChildObject;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestSubobject;
@@ -17,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -64,8 +67,8 @@ public class JsonViewSerializerTest {
     TestObject ref = new TestObject();
     ref.setInt1(1);
     ref.setStr2("asdf");
-    ref.setArray(new String[]{"apple", "banana"});
-    ref.setList(Arrays.asList("red", "blue", "green"));
+    ref.setStringArray(new String[]{"apple", "banana"});
+    ref.setList(asList("red", "blue", "green"));
     ref.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref).onClass(TestObject.class, Match.match()
@@ -85,7 +88,7 @@ public class JsonViewSerializerTest {
     ref.setChildField("green");
     ref.setIgnoredDirect("ignore me");
     ref.setIgnoredIndirect("ignore me too");
-    ref.setArray(new String[]{"pizza", "french fry"});
+    ref.setStringArray(new String[]{"pizza", "french fry"});
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref).onClass(TestObject.class, Match.match()
@@ -124,18 +127,18 @@ public class JsonViewSerializerTest {
     TestObject ref1 = new TestObject();
     ref1.setInt1(1);
     ref1.setStr2("asdf");
-    ref1.setArray(new String[]{"apple", "banana"});
-    ref1.setList(Arrays.asList("red", "blue", "green"));
+    ref1.setStringArray(new String[]{"apple", "banana"});
+    ref1.setList(asList("red", "blue", "green"));
     ref1.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
 
     TestObject ref2 = new TestObject();
     ref2.setInt1(2);
     ref2.setStr2("asdf");
-    ref2.setArray(new String[]{"orange", "kiwi"});
-    ref2.setList(Arrays.asList("cyan", "indigo", "violet"));
+    ref2.setStringArray(new String[]{"orange", "kiwi"});
+    ref2.setList(asList("cyan", "indigo", "violet"));
     ref2.setSub(new TestSubobject("zxcvxzcv", new TestSubobject("hjhljkljh")));
 
-    List<TestObject> refList = Arrays.asList(ref1, ref2);
+    List<TestObject> refList = asList(ref1, ref2);
 
     String serialized = sut.writeValueAsString(
         JsonView.with(refList).onClass(TestObject.class, Match.match()
@@ -154,12 +157,12 @@ public class JsonViewSerializerTest {
       assertNotNull(obj.get("sub"));
       assertNull(((Map) obj.get("sub")).get("val"));
 
-      assertNotNull(obj.get("array"));
-      assertTrue(obj.get("array") instanceof List);
-      List array = (List) obj.get("array");
-      assertEquals(ref.getArray().length, array.size());
+      assertNotNull(obj.get("stringArray"));
+      assertTrue(obj.get("stringArray") instanceof List);
+      List array = (List) obj.get("stringArray");
+      assertEquals(ref.getStringArray().length, array.size());
       for (int j = 0; j < array.size(); j++) {
-        assertEquals(ref.getArray()[j], array.get(j));
+        assertEquals(ref.getStringArray()[j], array.get(j));
       }
 
       assertNotNull(obj.get("list"));
@@ -178,22 +181,22 @@ public class JsonViewSerializerTest {
     TestObject ref1 = new TestObject();
     ref1.setInt1(1);
     ref1.setStr2("asdf");
-    ref1.setArray(new String[]{"apple", "banana"});
-    ref1.setList(Arrays.asList("red", "blue", "green"));
+    ref1.setStringArray(new String[]{"apple", "banana"});
+    ref1.setList(asList("red", "blue", "green"));
     ref1.setIgnoredIndirect("ignore me too");
     ref1.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
 
     TestChildObject ref2 = new TestChildObject();
     ref2.setChildField("green");
     ref2.setIgnoredDirect("ignore me");
-    ref2.setArray(new String[]{"pizza", "french fry"});
+    ref2.setStringArray(new String[]{"pizza", "french fry"});
 
     TestUnrelatedObject ref3 = new TestUnrelatedObject();
     ref3.setId(3L);
     ref3.setName("xxzcvxc");
 
     String serialized = sut.writeValueAsString(
-        JsonView.with(Arrays.asList(ref1, ref2, ref3))
+        JsonView.with(asList(ref1, ref2, ref3))
             .onClass(TestObject.class, Match.match()
                 .exclude("str2")
                 .include("ignoredIndirect"))
@@ -225,7 +228,7 @@ public class JsonViewSerializerTest {
   public void testListOfSubobjects() throws IOException {
     TestObject ref = new TestObject();
     ref.setInt1(1);
-    ref.setListOfObjects(Arrays.asList(new TestSubobject("test1"), new TestSubobject("test2", new TestSubobject("test3"))));
+    ref.setListOfObjects(asList(new TestSubobject("test1"), new TestSubobject("test2", new TestSubobject("test3"))));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, Match.match()
@@ -341,5 +344,31 @@ public class JsonViewSerializerTest {
     assertEquals(ref.getIgnoredIndirect(), obj.get("ignoredIndirect"));
     assertEquals(ref.getInt1(), obj.get("int1"));
     assertNotNull(obj.get("mapOfObjects"));
+  }
+
+  @Test
+  public void testPrimitiveArrays() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setIntArray(new int[]{1, 2, 3});
+    ref.setByteArray("asdf".getBytes());
+    ref.setStringArray(new String[]{"val1", "val2"});
+
+    TestObject t1 = new TestObject();
+    t1.setInt1(1);
+    TestObject t2 = new TestObject();
+    t2.setInt1(2);
+    ref.setObjArray(new TestObject[]{t1, t2});
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(Ints.asList(ref.getIntArray()), obj.get("intArray"));
+    assertEquals(Arrays.asList(ref.getStringArray()), obj.get("stringArray"));
+
+    assertEquals("asdf", new String(BaseEncoding.base64().decode((String) obj.get("byteArray"))));
+
+    List<Map<String, Object>> objList = (List<Map<String, Object>>) obj.get("objArray");
+    assertEquals(2, objList.size());
+    assertEquals(t1.getInt1(), objList.get(0).get("int1"));
+    assertEquals(t2.getInt1(), objList.get(1).get("int1"));
   }
 }

@@ -18,7 +18,10 @@ public class TestObject {
   private List<String> list;
   private Map<String,String> mapOfStrings;
   private Map<Integer,String> mapWithIntKeys;
-  private String[] array;
+  private String[] stringArray;
+  private byte[] byteArray;
+  private int[] intArray;
+  private TestObject[] objArray;
   private List<TestSubobject> listOfObjects;
   private Map<String, TestSubobject> mapOfObjects;
 
@@ -94,12 +97,36 @@ public class TestObject {
     this.mapWithIntKeys = mapWithIntKeys;
   }
 
-  public String[] getArray() {
-    return array;
+  public String[] getStringArray() {
+    return stringArray;
   }
 
-  public void setArray(String[] array) {
-    this.array = array;
+  public void setStringArray(String[] stringArray) {
+    this.stringArray = stringArray;
+  }
+
+  public byte[] getByteArray() {
+    return byteArray;
+  }
+
+  public void setByteArray(byte[] byteArray) {
+    this.byteArray = byteArray;
+  }
+
+  public int[] getIntArray() {
+    return intArray;
+  }
+
+  public void setIntArray(int[] intArray) {
+    this.intArray = intArray;
+  }
+
+  public TestObject[] getObjArray() {
+    return objArray;
+  }
+
+  public void setObjArray(TestObject[] objArray) {
+    this.objArray = objArray;
   }
 
   public List<TestSubobject> getListOfObjects() {
