@@ -14,9 +14,9 @@ While the declarative style certainly has many benefits (compile-time checking, 
     * [Wildcard matchers](#wildcard-matchers)
     * [Class matchers](#class-matchers)
 * [Spring Integration](#spring-integration)
-  * [Usage](#usage)
-  * [Including](#including)
-  
+  * [Usage](#usage-1)
+  * [Including](#including-1)
+
 # JsonView
 
 All the functionality of this library really boils down to a custom Jackson serializer.
