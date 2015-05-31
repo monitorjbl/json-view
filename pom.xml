@@ -11,6 +11,10 @@
   <description>Provides programmatic JSON response manipulation for Spring MVC</description>
   <url>https://github.com/monitorjbl/spring-json-view</url>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
   <developers>
     <developer>
       <id>monitorjbl</id>

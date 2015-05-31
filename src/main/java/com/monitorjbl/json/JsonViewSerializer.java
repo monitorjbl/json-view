@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +58,14 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         jgen.writeNumber((Integer) obj);
       } else if (obj instanceof Long) {
         jgen.writeNumber((Long) obj);
+      } else if (obj instanceof Short) {
+        jgen.writeNumber((Short) obj);
       } else if (obj instanceof Double) {
         jgen.writeNumber((Double) obj);
       } else if (obj instanceof Float) {
         jgen.writeNumber((Float) obj);
+      } else if (obj instanceof Character) {
+        jgen.writeNumber((Character) obj);
       } else if (obj instanceof Boolean) {
         jgen.writeBoolean((Boolean) obj);
       } else {
@@ -72,9 +77,14 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     @SuppressWarnings("unchecked")
     boolean writeList(Object obj) throws IOException {
       if (obj instanceof List || obj instanceof Set || obj.getClass().isArray()) {
-        Iterable<Object> iter;
+        Iterable iter;
         if (obj.getClass().isArray()) {
-          iter = Arrays.asList((Object[]) obj);
+          if (obj instanceof byte[]) {
+            jgen.writeBinary((byte[]) obj);
+            return true;
+          } else {
+            iter = convertArray(obj);
+          }
         } else {
           iter = (Iterable<Object>) obj;
         }
@@ -88,6 +98,57 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         return false;
       }
       return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    Iterable convertArray(Object obj) {
+      Iterable iter;
+      if (obj instanceof int[]) {
+        int[] arr = (int[]) obj;
+        iter = new ArrayList<>();
+        for (int v : arr) {
+          ((List<Integer>) iter).add(v);
+        }
+      } else if (obj instanceof double[]) {
+        double[] arr = (double[]) obj;
+        iter = new ArrayList<>();
+        for (double v : arr) {
+          ((List<Double>) iter).add(v);
+        }
+      } else if (obj instanceof float[]) {
+        float[] arr = (float[]) obj;
+        iter = new ArrayList<>();
+        for (float v : arr) {
+          ((List<Float>) iter).add(v);
+        }
+      } else if (obj instanceof long[]) {
+        long[] arr = (long[]) obj;
+        iter = new ArrayList<>();
+        for (long v : arr) {
+          ((List<Long>) iter).add(v);
+        }
+      } else if (obj instanceof short[]) {
+        short[] arr = (short[]) obj;
+        iter = new ArrayList<>();
+        for (short v : arr) {
+          ((List<Short>) iter).add(v);
+        }
+      } else if (obj instanceof char[]) {
+        char[] arr = (char[]) obj;
+        iter = new ArrayList<>();
+        for (char v : arr) {
+          ((List<Character>) iter).add(v);
+        }
+      } else if (obj instanceof boolean[]) {
+        boolean[] arr = (boolean[]) obj;
+        iter = new ArrayList<>();
+        for (boolean v : arr) {
+          ((List<Boolean>) iter).add(v);
+        }
+      } else {
+        iter = Arrays.asList((Object[]) obj);
+      }
+      return iter;
     }
 
     @SuppressWarnings("unchecked")
@@ -165,9 +226,9 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
           return false;
         } else if (included == 0) {
           return true;
-        } else if(excluded == 0){
+        } else if (excluded == 0) {
           return false;
-        }else {
+        } else {
           return !annotatedWithIgnore(field);
         }
       } else {

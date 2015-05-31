@@ -33,7 +33,7 @@ public class JsonView<T> {
   /**
    * Returns the object the {@code JsonView} was initiated with
    *
-   * @return
+   * @return the starting object
    */
   @SuppressWarnings("unchecked")
   public T returnValue() {
