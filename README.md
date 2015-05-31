@@ -1,8 +1,54 @@
-# JSON Views for Spring MVC
+# Programmatic JSON Views
 
-Ever needed to programmatically include or exclude a field from your Spring MVC response data? Well, if you have then you probably know by now that it's very difficult to do. Spring is by nature very declarative (annotations for everything!), so doing something programmatically gets ugly fast.
+Ever needed to programmatically include or exclude a field when serializing object with Jackson? Well, if you have then you probably know by now that it's very difficult to do. Jackson is by nature very declarative (annotations for everything!), so doing something programmatically gets ugly fast.
 
-While the declarative style certainly has many benefits (compile-time checking, ease of refactoring, etc.), the inability to simply and programmatically control your responses is one major downside. Inspired by [VRaptor](http://www.vraptor.org/), this library provides an easy way to alter the JSON output on the fly.
+While the declarative style certainly has many benefits (compile-time checking, ease of refactoring, etc.), the inability to simply and programmatically control your inclusions/exclusions is one major downside. Inspired by [VRaptor](http://www.vraptor.org/), this library provides an easy way to alter serialized output on the fly.
+
+* [JsonView](#jsonview)
+  * [Usage](#usage)
+  * [Including](#including)
+  * [Typical use cases](#typical-use-cases)
+    * [Excluding](#excluding)
+    * [Including](#including)
+  * [Advanced use cases](#advanced-use-cases)
+    * [Wildcard matchers](#wildcard-matchers)
+    * [Class matchers](#class-matchers)
+* [Spring Integration](#spring-integration)
+  * [Usage](#usage)
+  * [Including](#including)
+  
+# JsonView
+
+All the functionality of this library really boils down to a custom Jackson serializer.
+
+## Usage
+
+Just initialize a standard Jackson `ObjectMapper` class like so:
+
+```java
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.monitorjbl.json.JsonView;
+import com.monitorjbl.json.JsonViewSerializer;
+
+//initialize jackson
+ObjectMapper mapper = new ObjectMapper();
+SimpleModule module = new SimpleModule();
+module.addSerializer(JsonView.class, new JsonViewSerializer());
+mapper.registerModule(module);
+```
+
+## Including
+
+To use it, simply add this project to your classpath using your build tool of choice. This project is available on Maven Central, so if you're using Maven you can just add this to your pom.xml:
+
+```xml
+<dependency>
+    <groupId>com.monitorjbl</groupId>
+    <artifactId>json-view</artifactId>
+    <version>0.4</version>
+</dependency>
+```
 
 ## Typical use cases
 
@@ -10,7 +56,7 @@ The potential use cases for this library are pretty varied, but here are a few t
 
 ### Exclusion
 
-The most common use case for this is when dealing with Hibernate POJOs. If you have an object with an expensive field on it, you may not always want to return it. Let's say that you've got this class:
+The most common use case for this is when you have an object with an expensive (big) field on it. You may not always want to serialize it. Let's say that you've got this class:
 
 ```java
 public class MyObject{
@@ -33,15 +79,11 @@ Using `JsonView` allows you to filter this field out quickly and easily in your 
 import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 
-@RequestMapping(method = RequestMethod.GET, value = "/myObject")
-@ResponseBody
-public void getMyObjects() {
-    //get a list of the objects
-    List<MyObject> list = myObjectService.list();
+//get a list of the objects
+List<MyObject> list = myObjectService.list();
 
-    //exclude expensive field
-    JsonView.with(list).onClass(MyObject.class, match().exclude("contains"));
-}
+//exclude expensive field
+String json = mapper.writeValueAsString(JsonView.with(list).onClass(MyObject.class, match().exclude("contains")));
 ```
 
 ### Inclusion
@@ -67,39 +109,18 @@ You can programmatically include fields that are ignored by default:
 import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 
-@RequestMapping(method = RequestMethod.GET, value = "/myObject")
-@ResponseBody
-public void getMyObjects() {
-    //get a list of the objects
-    List<MyObject> list = myObjectService.list();
+//get a list of the objects
+List<MyObject> list = myObjectService.list();
 
-    //exclude expensive field
-    JsonView.with(list).onClass(MyObject.class, match().include("contains"));
-}
-```
-
-### Return value
-
-While the return value of the method isn't actually used with this library, documentation libraries like Swagger may depend on it being present. To make life simpler, you can simply tack on a `.returnValue()` to the end to grab the object you're manipulating:
-
-```java
-import com.monitorjbl.json.JsonView;
-import static com.monitorjbl.json.Match.match;
-
-@RequestMapping(method = RequestMethod.GET, value = "/myObject")
-@ResponseBody
-public List<MyObject> getMyObjects() {
-    return JsonView.with(service.list()).onClass(MyObject.class, match()
-        .include("contains")
-        .exclude("name")).returnValue();
-}
+//exclude expensive field
+String json = mapper.writeValueAsString(JsonView.with(list).onClass(MyObject.class, match().include("contains")));
 ```
 
 ## Advanced use cases
 
 But wait, there's more!
 
-### Wildcard Matchers
+### Wildcard matchers
 
 This is very handy if you have a limited set of fields you actually want to include.
 
@@ -107,16 +128,17 @@ This is very handy if you have a limited set of fields you actually want to incl
 import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 
+//get a list of the objects
 List<MyObject> list = myObjectService.list();
 
-JsonView.with(list).onClass(MyObject.class, match()
+String json = mapper.writeValueAsString(JsonView.with(list).onClass(MyObject.class, match()
       .exclude("*")
-      .include("name"));
+      .include("name")));
 ```
 
-Wildcards are implemented with trenary logic. If you specify a matcher without a wildcard, it will supercede any other matchers with a wildcard. 
+Wildcards are implemented with trenary logic. If you specify a matcher without a wildcard, it will supercede any other matchers with a wildcard.
 
-### Class Matchers
+### Class matchers
 
 You can also ignore fields on classes referenced by a class! Simply reference the field in a dot-path to do this. In the below example, the field `id` on the class `MySmallObject` is ignored:
 
@@ -126,9 +148,9 @@ import static com.monitorjbl.json.Match.match;
 
 List<MyObject> list = myObjectService.list();
 
-JsonView.with(list).onClass(MyObject.class, match()
+String json = mapper.writeValueAsString(JsonView.with(list).onClass(MyObject.class, match()
     .exclude("smallObj.id")
-    .exclude("contains"));
+    .exclude("contains")));
 ```
 
 Alternatively, you can make a separate matcher for other classes:
@@ -137,36 +159,13 @@ Alternatively, you can make a separate matcher for other classes:
 import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 
-  //get a list of the objects
-  List<MyObject> list = myObjectService.list();
+//get a list of the objects
+List<MyObject> list = myObjectService.list();
 
-  JsonView.with(list)
+String json = mapper.writeValueAsString(JsonView.with(list)
     .onClass(MyObject.class, match()
-      .exclude("contains"))
-    .onClass(MySmallObject.class, match()
-      .exclude("id");
-```
-
-### Use outside of Spring MVC
-
-All this functionality really boils down to a custom Jackson serializer. If you'd like to use it outside of Spring, you certainly can! Just initialize a standard Jackson `ObjectMapper` class and tell it to serialize your object like so:
-
-```java
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.monitorjbl.json.JsonView;
-
-import static com.monitorjbl.json.Match.match;
-
-ObjectMapper mapper = new ObjectMapper();
-SimpleModule module = new SimpleModule();
-module.addSerializer(JsonView.class, new JsonViewSerializer());
-mapper.registerModule(module);
-
-mapper.writeValueAsString(JsonView.with(list)
-      .onClass(MyObject.class, match()
         .exclude("contains"))
-      .onClass(MySmallObject.class, match()
+    .onClass(MySmallObject.class, match()
         .exclude("id"));
 ```
 
@@ -174,8 +173,8 @@ mapper.writeValueAsString(JsonView.with(list)
 
 The `JsonView` object is built to make it simple to include/exclude fields from your POJOs. However, when parsing your specified config, you should be aware of the following rules:
 
-1. Matching logic is trenary and wildcard matches are "less true" than specific matches. 
-2. `includes()` supercedes `excludes()` on equivalent level of matches. 
+1. Matching logic is trenary and wildcard matches are "less true" than specific matches.
+2. `includes()` supercedes `excludes()` on equivalent level of matches.
 3. Class inheritance is respected. If you `match()` on a parent class's field, it will be respected without needing a separate `match()` for the parent class.
 4. Higher class specificity in `Match.match()` overrides lower and it is *not* field-based; use of a matcher is an all-or-nothing affair based on the class for which you declare it to be used. Here are a couple of examples where this is important to keep in mind:
   1. If you provide matchers for both your class *and* its parent class, the parent's matcher will be used.
@@ -185,7 +184,11 @@ The `JsonView` object is built to make it simple to include/exclude fields from 
 5. `@JsonIgnore` on fields (not methods) and `@JsonIgnoreProperties` are respected, unless overridden by `include()`.
 6. All serialization is done via fields only. There is no current support for method-based serialization.
 
-## Usage
+# Spring Integration
+
+The Spring integration is really a `ThreadLocal` wrapper around the `JsonView` object.
+
+## Including
 
 To use it, simply add this project to your classpath using your build tool of choice. This project is available on Maven Central, so if you're using Maven you can just add this to your pom.xml:
 
@@ -193,9 +196,11 @@ To use it, simply add this project to your classpath using your build tool of ch
 <dependency>
     <groupId>com.monitorjbl</groupId>
     <artifactId>spring-json-view</artifactId>
-    <version>0.2</version>
+    <version>0.4</version>
 </dependency>
 ```
+
+## Configuration
 
 A word of warning: this project was built for Spring 4+, integration with Spring 3 is not supported yet. Make sure you're using the correct version. If you are, just add it to your context as a bean:
 
@@ -217,15 +222,73 @@ public class Context extends WebMvcConfigurerAdapter {
 <bean id="jsonViewSupport" class="com.monitorjbl.json.JsonViewSupportFactoryBean/>
 ```
 
-## Design
+## Usage
 
-Basic design information about this library.
+Using it is very simple:
 
-#### Serializer
-As stated above, the heart of this library is the custom Jackson serializer. The [JsonViewSerializer](src/main/java/com/monitorjbl/json/JsonViewSerializer.java) class interprets both the object to serialize and the include/exclude config to write your object as a String. Pretty much everything else is simply to integrate it nicely with Spring MVC.
+```java
+import com.monitorjbl.json.JsonResult;
+import com.monitorjbl.json.JsonView;
+import com.monitorjbl.json.Match;
+import com.monitorjbl.json.model.TestObject;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-#### Spring MVC Integration
-The [JsonView](src/main/java/com/monitorjbl/json/JsonView.java) class that you refer to stores a `ThreadLocal` var containing your returned object and all configuration information. The `ThreadLocal` is used to store the result so your method doesn't have to return a particular type value. If you have used `JsonView` at all in your current thread, this value will be set and your response will generated from it.
+import java.util.List;
 
-#### External use information
-Use of the JsonViewSerializer outside of the Spring MVC integration is fine, however there will still be a `ThreadLocal` reference to your object and config. If this cause an issue for you, you can simply call `JsonView.with()` again to reset the reference.
+@Controller
+public class JsonController {
+  private JsonResult json = JsonResult.instance();
+  @Autowired
+  private TestObjectService service;
+
+  @RequestMapping(method = RequestMethod.GET, value = "/bean")
+  @ResponseBody
+  public void getTestObject() {
+    List<TestObject> list = service.list();
+
+    json.use(JsonView.with(list)
+        .onClass(TestObject.class, Match.match()
+            .exclude("int1")
+            .include("ignoredDirect")));
+  }
+}
+```
+
+## Return value
+
+While the return value of the method isn't actually used with this library, documentation libraries like Swagger may depend on it being present. To make life simpler, you can simply tack on a `.returnValue()` to the end to grab the object you're manipulating:
+
+```java
+import com.monitorjbl.json.JsonResult;
+import com.monitorjbl.json.JsonView;
+import com.monitorjbl.json.Match;
+import com.monitorjbl.json.model.TestObject;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.List;
+
+@Controller
+public class JsonController {
+  private JsonResult json = JsonResult.instance();
+  @Autowired
+  private TestObjectService service;
+
+  @RequestMapping(method = RequestMethod.GET, value = "/bean")
+  @ResponseBody
+  public void getTestObject() {
+    List<TestObject> list = service.list();
+
+    return json.use(JsonView.with(list)
+        .onClass(TestObject.class, Match.match()
+            .exclude("int1")
+            .include("ignoredDirect")))
+         .returnValue();
+  }
+}
+```

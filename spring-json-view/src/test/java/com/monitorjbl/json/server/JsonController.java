@@ -1,16 +1,15 @@
 package com.monitorjbl.json.server;
 
 import com.google.common.collect.ImmutableMap;
+import com.monitorjbl.json.JsonResult;
 import com.monitorjbl.json.JsonView;
 import com.monitorjbl.json.Match;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestSubobject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,8 +18,7 @@ import java.util.Map;
 
 @Controller
 public class JsonController {
-  @Autowired
-  private RequestMappingHandlerAdapter adapter;
+  private JsonResult json = JsonResult.instance();
 
   @RequestMapping(method = RequestMethod.GET, value = "/ready")
   @ResponseBody
@@ -44,10 +42,10 @@ public class JsonController {
     obj.setList(Arrays.asList("red", "blue", "green"));
     obj.setSub(new TestSubobject("qwerqwerqwerqw"));
 
-    JsonView.with(obj)
+    json.use(JsonView.with(obj)
         .onClass(TestObject.class, Match.match()
             .exclude("int1")
-            .include("ignoredDirect"));
+            .include("ignoredDirect")));
   }
 
   @RequestMapping(method = RequestMethod.GET, value = "/bean/withReturnValue")
@@ -60,10 +58,10 @@ public class JsonController {
     obj.setList(Arrays.asList("red", "blue", "green"));
     obj.setSub(new TestSubobject("qwerqwerqwerqw"));
 
-    return JsonView.with(obj)
+    return json.use(JsonView.with(obj)
         .onClass(TestObject.class, Match.match()
             .exclude("int1")
-            .include("ignoredDirect"))
+            .include("ignoredDirect")))
         .returnValue();
   }
 
@@ -82,10 +80,10 @@ public class JsonController {
     obj.setStr2("asdf");
     list.add(obj);
 
-    JsonView.with(list)
+    json.use(JsonView.with(list)
         .onClass(TestObject.class, Match.match()
             .exclude("int1")
-            .include("ignoredDirect"));
+            .include("ignoredDirect")));
   }
 
   @RequestMapping(method = RequestMethod.GET, value = "/map")
