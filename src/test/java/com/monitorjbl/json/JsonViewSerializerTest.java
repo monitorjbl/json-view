@@ -15,6 +15,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -344,6 +345,16 @@ public class JsonViewSerializerTest {
     assertEquals(ref.getIgnoredIndirect(), obj.get("ignoredIndirect"));
     assertEquals(ref.getInt1(), obj.get("int1"));
     assertNotNull(obj.get("mapOfObjects"));
+  }
+
+  @Test
+  public void testDate() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setDate(new Date());
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(ref.getDate().getTime(), obj.get("date"));
   }
 
   @Test

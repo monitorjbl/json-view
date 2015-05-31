@@ -3,6 +3,7 @@ package com.monitorjbl.json.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -13,11 +14,12 @@ public class TestObject {
   @JsonIgnore
   private String ignoredDirect;
   private String ignoredIndirect;
+  private Date date;
   private int int1;
   private TestSubobject sub;
   private List<String> list;
-  private Map<String,String> mapOfStrings;
-  private Map<Integer,String> mapWithIntKeys;
+  private Map<String, String> mapOfStrings;
+  private Map<Integer, String> mapWithIntKeys;
   private String[] stringArray;
   private byte[] byteArray;
   private int[] intArray;
@@ -55,6 +57,14 @@ public class TestObject {
 
   public void setIgnoredIndirect(String ignoredIndirect) {
     this.ignoredIndirect = ignoredIndirect;
+  }
+
+  public Date getDate() {
+    return date;
+  }
+
+  public void setDate(Date date) {
+    this.date = date;
   }
 
   public int getInt1() {

@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Date;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -85,6 +86,19 @@ public class WriterTest {
   }
 
   @Test
+  public void testWritePrimitive_string() throws Exception {
+    sut.writePrimitive("test");
+    verify(jgen, times(1)).writeString("test");
+  }
+
+  @Test
+  public void testWritePrimitive_date() throws Exception {
+    Date dt = new Date();
+    sut.writePrimitive(dt);
+    verify(jgen, times(1)).writeNumber(dt.getTime());
+  }
+
+  @Test
   public void testWritePrimitive_int() throws Exception {
     int primitive = 1;
     Integer obj = 2;
@@ -105,6 +119,26 @@ public class WriterTest {
   }
 
   @Test
+  public void testWritePrimitive_short() throws Exception {
+    short primitive = 1;
+    Short obj = 2;
+    assertTrue(sut.writePrimitive(primitive));
+    assertTrue(sut.writePrimitive(obj));
+    verify(jgen, times(1)).writeNumber((short) 1);
+    verify(jgen, times(1)).writeNumber((short) 2);
+  }
+
+  @Test
+  public void testWritePrimitive_char() throws Exception {
+    char primitive = 'a';
+    Character obj = 'b';
+    assertTrue(sut.writePrimitive(primitive));
+    assertTrue(sut.writePrimitive(obj));
+    verify(jgen, times(1)).writeNumber('a');
+    verify(jgen, times(1)).writeNumber('b');
+  }
+
+  @Test
   public void testWritePrimitive_double() throws Exception {
     double primitive = 1.0;
     Double obj = 2.0;
@@ -122,6 +156,16 @@ public class WriterTest {
     assertTrue(sut.writePrimitive(obj));
     verify(jgen, times(1)).writeNumber(1.0f);
     verify(jgen, times(1)).writeNumber(2.0f);
+  }
+
+  @Test
+  public void testWritePrimitive_byte() throws Exception {
+    byte primitive = 1;
+    Byte obj = 2;
+    assertTrue(sut.writePrimitive(primitive));
+    assertTrue(sut.writePrimitive(obj));
+    verify(jgen, times(1)).writeNumber((byte) 1);
+    verify(jgen, times(1)).writeNumber((byte) 2);
   }
 
   @Test
@@ -230,9 +274,4 @@ public class WriterTest {
     verify(jgen, times(1)).writeBinary(val.getBytes());
   }
 
-  @Test
-  public void testWritePrimitive_string() throws Exception {
-    sut.writePrimitive("test");
-    verify(jgen, times(1)).writeString("test");
-  }
 }

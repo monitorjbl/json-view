@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,6 +55,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     boolean writePrimitive(Object obj) throws IOException {
       if (obj instanceof String) {
         jgen.writeString((String) obj);
+      } else if (obj instanceof Date) {
+        jgen.writeNumber(((Date) obj).getTime());
       } else if (obj instanceof Integer) {
         jgen.writeNumber((Integer) obj);
       } else if (obj instanceof Long) {
@@ -66,6 +69,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         jgen.writeNumber((Float) obj);
       } else if (obj instanceof Character) {
         jgen.writeNumber((Character) obj);
+      } else if (obj instanceof Byte) {
+        jgen.writeNumber((Byte) obj);
       } else if (obj instanceof Boolean) {
         jgen.writeBoolean((Boolean) obj);
       } else {
