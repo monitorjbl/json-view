@@ -208,7 +208,6 @@ A word of warning: this project was built for Spring 4+, integration with Spring
 ```java
 @EnableWebMvc
 @Configuration
-@ComponentScan({"com.monitorjbl"})
 public class Context extends WebMvcConfigurerAdapter {
   @Bean
   public JsonViewSupportFactoryBean views() {
