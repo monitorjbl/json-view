@@ -1,6 +1,7 @@
 package com.monitorjbl.json;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Match {
@@ -11,13 +12,17 @@ public class Match {
 
   }
 
-  public Match include(String field) {
-    includes.add(field);
+  public Match include(String... fields) {
+    if (fields != null) {
+      includes.addAll(Arrays.asList(fields));
+    }
     return this;
   }
 
-  public Match exclude(String field) {
-    excludes.add(field);
+  public Match exclude(String... fields) {
+    if (fields != null) {
+      excludes.addAll(Arrays.asList(fields));
+    }
     return this;
   }
 
