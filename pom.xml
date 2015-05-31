@@ -25,7 +25,7 @@
 
   <licenses>
     <license>
-      <name>GPLv2</name>
+      <name>GPLv3</name>
       <url>https://raw.githubusercontent.com/monitorjbl/spring-json-view/master/LICENSE</url>
       <distribution>repo</distribution>
     </license>
