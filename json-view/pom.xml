@@ -9,7 +9,7 @@
   <version>0.4-SNAPSHOT</version>
   <name>json-view</name>
   <description>Provides programmatic exclusion/inclusion for Jackson JSON serialization</description>
-  <url>https://github.com/monitorjbl/spring-json-view</url>
+  <url>https://github.com/monitorjbl/json-view</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -26,13 +26,13 @@
   <licenses>
     <license>
       <name>GPLv3</name>
-      <url>https://raw.githubusercontent.com/monitorjbl/spring-json-view/master/LICENSE</url>
+      <url>https://raw.githubusercontent.com/monitorjbl/json-view/master/LICENSE</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
 
   <scm>
-    <url>https://github.com/monitorjbl/spring-json-view.git</url>
+    <url>https://github.com/monitorjbl/json-view.git</url>
   </scm>
 
   <build>
