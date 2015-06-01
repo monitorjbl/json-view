@@ -6,7 +6,7 @@
 
   <groupId>com.monitorjbl</groupId>
   <artifactId>spring-json-view</artifactId>
-  <version>0.5-SNAPSHOT</version>
+  <version>0.5</version>
   <name>spring-json-view</name>
   <description>Provides programmatic JSON response manipulation for Spring MVC</description>
   <url>https://github.com/monitorjbl/spring-json-view</url>
