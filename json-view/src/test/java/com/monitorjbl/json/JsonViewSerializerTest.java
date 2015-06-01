@@ -7,6 +7,7 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Ints;
 import com.monitorjbl.json.model.TestChildObject;
 import com.monitorjbl.json.model.TestObject;
+import com.monitorjbl.json.model.TestObject.TestEnum;
 import com.monitorjbl.json.model.TestSubobject;
 import com.monitorjbl.json.model.TestUnrelatedObject;
 import org.junit.Before;
@@ -419,5 +420,16 @@ public class JsonViewSerializerTest {
     assertEquals(2, objList.size());
     assertEquals(t1.getInt1(), objList.get(0).get("int1"));
     assertEquals(t2.getInt1(), objList.get(1).get("int1"));
+  }
+
+  @Test
+  public void testEnums() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setTestEnum(TestEnum.VALUE_A);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertNotNull(obj.get("testEnum"));
+    assertEquals(ref.getTestEnum().toString(), obj.get("testEnum"));
   }
 }

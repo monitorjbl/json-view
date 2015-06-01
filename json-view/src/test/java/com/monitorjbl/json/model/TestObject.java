@@ -9,6 +9,8 @@ import java.util.Map;
 
 @JsonIgnoreProperties({"ignoredIndirect"})
 public class TestObject {
+  public static enum TestEnum{VALUE_A,VALUE_B}
+
   private String str1;
   private String str2;
   @JsonIgnore
@@ -26,6 +28,7 @@ public class TestObject {
   private TestObject[] objArray;
   private List<TestSubobject> listOfObjects;
   private Map<String, TestSubobject> mapOfObjects;
+  private TestEnum testEnum;
 
   public String getStr1() {
     return str1;
@@ -153,5 +156,13 @@ public class TestObject {
 
   public void setMapOfObjects(Map<String, TestSubobject> mapOfObjects) {
     this.mapOfObjects = mapOfObjects;
+  }
+
+  public TestEnum getTestEnum() {
+    return testEnum;
+  }
+
+  public void setTestEnum(TestEnum testEnum) {
+    this.testEnum = testEnum;
   }
 }

@@ -79,6 +79,15 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       return true;
     }
 
+    private boolean writeEnum(Object obj) throws IOException {
+      if (obj.getClass().isEnum()) {
+        jgen.writeString(obj.toString());
+      } else {
+        return false;
+      }
+      return true;
+    }
+
     @SuppressWarnings("unchecked")
     boolean writeList(Object obj) throws IOException {
       if (obj instanceof List || obj instanceof Set || obj.getClass().isArray()) {
@@ -286,7 +295,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       }
 
       //try to handle all primitives before treating this as json object
-      if (value != null && !writePrimitive(value) && !writeList(value) && !writeMap(value)) {
+      if (value != null && !writePrimitive(value) && !writeEnum(value) && !writeList(value) && !writeMap(value)) {
         writeObject(value);
       }
 
