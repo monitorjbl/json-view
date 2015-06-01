@@ -2,6 +2,7 @@ package com.monitorjbl.json.model;
 
 public class TestSubobject {
   private String val;
+  private String otherVal;
   private TestSubobject sub;
 
   public TestSubobject(String val) {
@@ -22,6 +23,14 @@ public class TestSubobject {
 
   public void setVal(String val) {
     this.val = val;
+  }
+
+  public String getOtherVal() {
+    return otherVal;
+  }
+
+  public void setOtherVal(String otherVal) {
+    this.otherVal = otherVal;
   }
 
   public TestSubobject getSub() {

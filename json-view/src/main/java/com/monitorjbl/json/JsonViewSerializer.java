@@ -212,6 +212,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       }
       if (match == null) {
         match = currentMatch;
+      } else {
+        prefix = "";
       }
 
       //if there is a match, respect it

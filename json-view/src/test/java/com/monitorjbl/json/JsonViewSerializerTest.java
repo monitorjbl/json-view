@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.monitorjbl.json.Match.match;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -72,7 +73,7 @@ public class JsonViewSerializerTest {
     ref.setList(asList("red", "blue", "green"));
     ref.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
     String serialized = sut.writeValueAsString(
-        JsonView.with(ref).onClass(TestObject.class, Match.match()
+        JsonView.with(ref).onClass(TestObject.class, match()
             .exclude("str2")
             .exclude("sub.val")
             .include("ignoredDirect")));
@@ -92,7 +93,7 @@ public class JsonViewSerializerTest {
     ref.setStringArray(new String[]{"pizza", "french fry"});
 
     String serialized = sut.writeValueAsString(
-        JsonView.with(ref).onClass(TestObject.class, Match.match()
+        JsonView.with(ref).onClass(TestObject.class, match()
             .exclude("str2")
             .exclude("sub.val")
             .include("ignoredDirect")));
@@ -112,10 +113,10 @@ public class JsonViewSerializerTest {
     ref.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
-            .onClass(TestObject.class, Match.match()
+            .onClass(TestObject.class, match()
                 .exclude("str2")
                 .exclude("sub.val"))
-            .onClass(TestSubobject.class, Match.match()
+            .onClass(TestSubobject.class, match()
                 .exclude("sub")));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
@@ -142,7 +143,7 @@ public class JsonViewSerializerTest {
     List<TestObject> refList = asList(ref1, ref2);
 
     String serialized = sut.writeValueAsString(
-        JsonView.with(refList).onClass(TestObject.class, Match.match()
+        JsonView.with(refList).onClass(TestObject.class, match()
             .exclude("str2")
             .exclude("sub.val")
             .include("ignoredDirect")));
@@ -198,13 +199,13 @@ public class JsonViewSerializerTest {
 
     String serialized = sut.writeValueAsString(
         JsonView.with(asList(ref1, ref2, ref3))
-            .onClass(TestObject.class, Match.match()
+            .onClass(TestObject.class, match()
                 .exclude("str2")
                 .include("ignoredIndirect"))
-            .onClass(TestChildObject.class, Match.match()
+            .onClass(TestChildObject.class, match()
                 .exclude("array")
                 .include("ignoredDirect"))
-            .onClass(TestUnrelatedObject.class, Match.match()
+            .onClass(TestUnrelatedObject.class, match()
                 .exclude("name")));
     List<Map<String, Object>> output = sut.readValue(serialized, ArrayList.class);
 
@@ -232,9 +233,9 @@ public class JsonViewSerializerTest {
     ref.setListOfObjects(asList(new TestSubobject("test1"), new TestSubobject("test2", new TestSubobject("test3"))));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
-            .onClass(TestObject.class, Match.match()
+            .onClass(TestObject.class, match()
                 .exclude("sub.val"))
-            .onClass(TestSubobject.class, Match.match()
+            .onClass(TestSubobject.class, match()
                 .exclude("sub")));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
@@ -257,9 +258,9 @@ public class JsonViewSerializerTest {
     ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
-            .onClass(TestObject.class, Match.match()
+            .onClass(TestObject.class, match()
                 .exclude("sub.val"))
-            .onClass(TestSubobject.class, Match.match()
+            .onClass(TestSubobject.class, match()
                 .exclude("sub")));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
@@ -282,9 +283,9 @@ public class JsonViewSerializerTest {
     ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
-            .onClass(TestObject.class, Match.match()
+            .onClass(TestObject.class, match()
                 .exclude("sub.val"))
-            .onClass(TestSubobject.class, Match.match()
+            .onClass(TestSubobject.class, match()
                 .exclude("sub")));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
@@ -296,6 +297,43 @@ public class JsonViewSerializerTest {
     assertEquals(ref.getMapWithIntKeys().get(1), map.get("1"));
     assertNull(map.get(2));
     assertEquals(ref.getMapWithIntKeys().get(2), map.get("2"));
+  }
+
+  @Test
+  public void testClassMatching() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setStr1("str");
+    TestSubobject sub = new TestSubobject();
+    sub.setVal("val1");
+    ref.setSub(sub);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref).onClass(TestSubobject.class, match().exclude("val")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(ref.getStr1(), obj.get("str1"));
+    assertNotNull(obj.get("sub"));
+    assertNull(((Map) obj.get("sub")).get("val"));
+  }
+
+  @Test
+  public void testClassMatchingMixedWithPathMatching() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setStr1("str");
+    ref.setInt1(3);
+    TestSubobject sub = new TestSubobject();
+    sub.setVal("val1");
+    sub.setOtherVal("val2");
+    ref.setSub(sub);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref)
+        .onClass(TestObject.class, match()
+            .exclude("int1", "sub.otherVal"))
+        .onClass(TestSubobject.class, match()
+            .exclude("val")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(ref.getStr1(), obj.get("str1"));
+    assertNotNull(obj.get("sub"));
+    assertNull(((Map) obj.get("sub")).get("val"));
+    assertNotNull(((Map) obj.get("sub")).get("otherVal"));
   }
 
   @Test
@@ -311,7 +349,7 @@ public class JsonViewSerializerTest {
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
-            .onClass(TestObject.class, Match.match()
+            .onClass(TestObject.class, match()
                 .exclude("*")
                 .include("str2")));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
@@ -336,7 +374,7 @@ public class JsonViewSerializerTest {
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
-            .onClass(TestObject.class, Match.match()
+            .onClass(TestObject.class, match()
                 .include("*")
                 .exclude("str2")));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
