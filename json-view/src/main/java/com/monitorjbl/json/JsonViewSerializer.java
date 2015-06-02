@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -224,6 +225,9 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     boolean fieldAllowed(Field field, Class declaringClass) {
       String name = field.getName();
       String prefix = currentPath.length() > 0 ? currentPath + "." : "";
+      if(Modifier.isStatic(field.getModifiers())){
+        return false;
+      }
 
       //search for matcher
       Match match = null;

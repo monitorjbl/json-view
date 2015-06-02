@@ -454,4 +454,15 @@ public class JsonViewSerializerTest {
     assertNotNull(obj.get("testEnum"));
     assertEquals(ref.getTestEnum().toString(), obj.get("testEnum"));
   }
+
+  @Test
+  public void testStaticFieldsAreIgnored() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setStr1("val1");
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertNull(obj.get("PUBLIC_FIELD"));
+    assertNull(obj.get("PRIVATE_FIELD"));
+  }
 }
