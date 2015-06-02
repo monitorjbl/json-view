@@ -73,7 +73,7 @@ If you were to return a list of `MyObject`, you may not want to show the `contai
 
 The typically suggested pattern suggests using the `@JsonIgnore` annotation on the field. However, this effectively makes this field permanently ignored everywhere in your app. What if you want only don't want to show this field when dealing with a single instance rather than a `List`?
 
-Using `JsonView` allows you to filter this field out quickly and easily in your controller methods (note that your method return value must be `void`):
+Using `JsonView` allows you to filter this field out quickly and easily:
 
 ```java
 import com.monitorjbl.json.JsonView;
