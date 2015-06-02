@@ -153,7 +153,7 @@ public class JsonViewSerializerTest {
     List<Map<String, Object>> output = sut.readValue(serialized, ArrayList.class);
 
     assertEquals(refList.size(), output.size());
-    for (int i = 0; i < output.size(); i++) {
+    for(int i = 0; i < output.size(); i++) {
       Map<String, Object> obj = output.get(i);
       TestObject ref = refList.get(i);
 
@@ -166,7 +166,7 @@ public class JsonViewSerializerTest {
       assertTrue(obj.get("stringArray") instanceof List);
       List array = (List) obj.get("stringArray");
       assertEquals(ref.getStringArray().length, array.size());
-      for (int j = 0; j < array.size(); j++) {
+      for(int j = 0; j < array.size(); j++) {
         assertEquals(ref.getStringArray()[j], array.get(j));
       }
 
@@ -174,7 +174,7 @@ public class JsonViewSerializerTest {
       assertTrue(obj.get("list") instanceof List);
       List list = (List) obj.get("list");
       assertEquals(ref.getList().size(), list.size());
-      for (int j = 0; j < list.size(); j++) {
+      for(int j = 0; j < list.size(); j++) {
         assertEquals(ref.getList().get(j), list.get(j));
       }
 
@@ -334,6 +334,27 @@ public class JsonViewSerializerTest {
             .exclude("val")));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
     assertEquals(ref.getStr1(), obj.get("str1"));
+    assertNotNull(obj.get("sub"));
+    assertNull(((Map) obj.get("sub")).get("val"));
+    assertNotNull(((Map) obj.get("sub")).get("otherVal"));
+  }
+
+  @Test
+  public void testClassMatchingWithNoRootMatcher() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setStr1("str");
+    ref.setInt1(3);
+    TestSubobject sub = new TestSubobject();
+    sub.setVal("val1");
+    sub.setOtherVal("val2");
+    ref.setSub(sub);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref).onClass(TestSubobject.class, match()
+        .exclude("*")
+        .include("otherVal")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(ref.getStr1(), obj.get("str1"));
+    assertEquals(ref.getInt1(), obj.get("int1"));
     assertNotNull(obj.get("sub"));
     assertNull(((Map) obj.get("sub")).get("val"));
     assertNotNull(((Map) obj.get("sub")).get("otherVal"));

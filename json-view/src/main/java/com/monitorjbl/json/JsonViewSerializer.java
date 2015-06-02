@@ -55,24 +55,32 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       this.cacheSize = cacheSize;
     }
 
+    //internal use only to encapsulate what the current state was
+    private JsonWriter(JsonGenerator jgen, JsonView result, int cacheSize, Match currentMatch) {
+      this.jgen = jgen;
+      this.result = result;
+      this.cacheSize = cacheSize;
+      this.currentMatch = currentMatch;
+    }
+
     boolean writePrimitive(Object obj) throws IOException {
-      if (obj instanceof String) {
+      if(obj instanceof String) {
         jgen.writeString((String) obj);
-      } else if (obj instanceof Integer) {
+      } else if(obj instanceof Integer) {
         jgen.writeNumber((Integer) obj);
-      } else if (obj instanceof Long) {
+      } else if(obj instanceof Long) {
         jgen.writeNumber((Long) obj);
-      } else if (obj instanceof Short) {
+      } else if(obj instanceof Short) {
         jgen.writeNumber((Short) obj);
-      } else if (obj instanceof Double) {
+      } else if(obj instanceof Double) {
         jgen.writeNumber((Double) obj);
-      } else if (obj instanceof Float) {
+      } else if(obj instanceof Float) {
         jgen.writeNumber((Float) obj);
-      } else if (obj instanceof Character) {
+      } else if(obj instanceof Character) {
         jgen.writeNumber((Character) obj);
-      } else if (obj instanceof Byte) {
+      } else if(obj instanceof Byte) {
         jgen.writeNumber((Byte) obj);
-      } else if (obj instanceof Boolean) {
+      } else if(obj instanceof Boolean) {
         jgen.writeBoolean((Boolean) obj);
       } else {
         return false;
@@ -81,13 +89,13 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     boolean writeSpecial(Object obj) throws IOException {
-      if (obj instanceof Date) {
+      if(obj instanceof Date) {
         jgen.writeNumber(((Date) obj).getTime());
-      } else if (obj instanceof URL) {
+      } else if(obj instanceof URL) {
         jgen.writeString(obj.toString());
-      } else if (obj instanceof URI) {
+      } else if(obj instanceof URI) {
         jgen.writeString(obj.toString());
-      } else if (obj instanceof Class) {
+      } else if(obj instanceof Class) {
         jgen.writeString(((Class) obj).getCanonicalName());
       } else {
         return false;
@@ -96,7 +104,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     boolean writeEnum(Object obj) throws IOException {
-      if (obj.getClass().isEnum()) {
+      if(obj.getClass().isEnum()) {
         jgen.writeString(obj.toString());
       } else {
         return false;
@@ -106,10 +114,10 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
     @SuppressWarnings("unchecked")
     boolean writeList(Object obj) throws IOException {
-      if (obj instanceof List || obj instanceof Set || obj.getClass().isArray()) {
+      if(obj instanceof List || obj instanceof Set || obj.getClass().isArray()) {
         Iterable iter;
-        if (obj.getClass().isArray()) {
-          if (obj instanceof byte[]) {
+        if(obj.getClass().isArray()) {
+          if(obj instanceof byte[]) {
             jgen.writeBinary((byte[]) obj);
             return true;
           } else {
@@ -120,8 +128,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         }
 
         jgen.writeStartArray();
-        for (Object o : iter) {
-          new JsonWriter(jgen, result, cacheSize).write(null, o);
+        for(Object o : iter) {
+          new JsonWriter(jgen, result, cacheSize, currentMatch).write(null, o);
         }
         jgen.writeEndArray();
       } else {
@@ -133,46 +141,46 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     @SuppressWarnings("unchecked")
     Iterable convertArray(Object obj) {
       Iterable iter;
-      if (obj instanceof int[]) {
+      if(obj instanceof int[]) {
         int[] arr = (int[]) obj;
         iter = new ArrayList<>();
-        for (int v : arr) {
+        for(int v : arr) {
           ((List<Integer>) iter).add(v);
         }
-      } else if (obj instanceof double[]) {
+      } else if(obj instanceof double[]) {
         double[] arr = (double[]) obj;
         iter = new ArrayList<>();
-        for (double v : arr) {
+        for(double v : arr) {
           ((List<Double>) iter).add(v);
         }
-      } else if (obj instanceof float[]) {
+      } else if(obj instanceof float[]) {
         float[] arr = (float[]) obj;
         iter = new ArrayList<>();
-        for (float v : arr) {
+        for(float v : arr) {
           ((List<Float>) iter).add(v);
         }
-      } else if (obj instanceof long[]) {
+      } else if(obj instanceof long[]) {
         long[] arr = (long[]) obj;
         iter = new ArrayList<>();
-        for (long v : arr) {
+        for(long v : arr) {
           ((List<Long>) iter).add(v);
         }
-      } else if (obj instanceof short[]) {
+      } else if(obj instanceof short[]) {
         short[] arr = (short[]) obj;
         iter = new ArrayList<>();
-        for (short v : arr) {
+        for(short v : arr) {
           ((List<Short>) iter).add(v);
         }
-      } else if (obj instanceof char[]) {
+      } else if(obj instanceof char[]) {
         char[] arr = (char[]) obj;
         iter = new ArrayList<>();
-        for (char v : arr) {
+        for(char v : arr) {
           ((List<Character>) iter).add(v);
         }
-      } else if (obj instanceof boolean[]) {
+      } else if(obj instanceof boolean[]) {
         boolean[] arr = (boolean[]) obj;
         iter = new ArrayList<>();
-        for (boolean v : arr) {
+        for(boolean v : arr) {
           ((List<Boolean>) iter).add(v);
         }
       } else {
@@ -183,13 +191,13 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
     @SuppressWarnings("unchecked")
     boolean writeMap(Object obj) throws IOException {
-      if (obj instanceof Map) {
+      if(obj instanceof Map) {
         Map<Object, Object> map = (Map<Object, Object>) obj;
 
         jgen.writeStartObject();
-        for (Object key : map.keySet()) {
+        for(Object key : map.keySet()) {
           jgen.writeFieldName(key.toString());
-          new JsonWriter(jgen, result, cacheSize).write(null, map.get(key));
+          new JsonWriter(jgen, result, cacheSize, currentMatch).write(null, map.get(key));
         }
         jgen.writeEndObject();
       } else {
@@ -202,19 +210,19 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       jgen.writeStartObject();
 
       Class cls = obj.getClass();
-      while (!cls.equals(Object.class)) {
+      while(!cls.equals(Object.class)) {
         Field[] fields = cls.getDeclaredFields();
-        for (Field field : fields) {
+        for(Field field : fields) {
           try {
             field.setAccessible(true);
             Object val = field.get(obj);
 
-            if (val != null && fieldAllowed(field, obj.getClass())) {
+            if(val != null && fieldAllowed(field, obj.getClass())) {
               String name = field.getName();
               jgen.writeFieldName(name);
-              write(name, val);
+              new JsonWriter(jgen, result, cacheSize, currentMatch).write(name, val);
             }
-          } catch (IllegalArgumentException | IllegalAccessException e) {
+          } catch(IllegalArgumentException | IllegalAccessException e) {
             e.printStackTrace();
           }
         }
@@ -224,44 +232,49 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       jgen.writeEndObject();
     }
 
+    @SuppressWarnings("unchecked")
     boolean fieldAllowed(Field field, Class declaringClass) {
       String name = field.getName();
       String prefix = currentPath.length() > 0 ? currentPath + "." : "";
-      if (Modifier.isStatic(field.getModifiers())) {
+      if(Modifier.isStatic(field.getModifiers())) {
         return false;
       }
 
       //search for matcher
       Match match = null;
       Class cls = declaringClass;
-      while (!cls.equals(Object.class) && match == null) {
+      while(!cls.equals(Object.class) && match == null) {
         match = result.getMatch(cls);
         cls = cls.getSuperclass();
       }
-      if (match == null) {
+      if(match == null) {
         match = currentMatch;
       } else {
         prefix = "";
       }
 
       //if there is a match, respect it
-      if (match != null) {
-        currentMatch = match;
+      if(match != null) {
+
+        if(currentMatch == null) {
+          currentMatch = match;
+        }
+
         int included = containsMatchingPattern(match.getIncludes(), prefix + name);
         int excluded = containsMatchingPattern(match.getExcludes(), prefix + name);
+
         /*
         The logic for this is a little complex. We're dealing with ternary logic to
         properly handle wildcard matches. We want matches made with wildcards to be
         overruled by matches without them.
          */
-
-        if (included == 1) {
+        if(included == 1) {
           return true;
-        } else if (excluded == 1) {
+        } else if(excluded == 1) {
           return false;
-        } else if (included == 0) {
+        } else if(included == 0) {
           return true;
-        } else if (excluded == 0) {
+        } else if(excluded == 0) {
           return false;
         } else {
           return !annotatedWithIgnore(field);
@@ -273,10 +286,10 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     boolean annotatedWithIgnore(Field f) {
-      if (!hasJsonIgnoreCache.containsKey(f)) {
+      if(!hasJsonIgnoreCache.containsKey(f)) {
         JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
         JsonIgnoreProperties ignoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
-        if (hasJsonIgnoreCache.size() > cacheSize) {
+        if(hasJsonIgnoreCache.size() > cacheSize) {
           hasJsonIgnoreCache.remove(hasJsonIgnoreCache.keySet().iterator().next());
         }
         hasJsonIgnoreCache.put(f, (jsonIgnore != null && jsonIgnore.value()) ||
@@ -298,9 +311,9 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
      * @return
      */
     int containsMatchingPattern(List<String> values, String pattern) {
-      for (String val : values) {
+      for(String val : values) {
         String replaced = val.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*");
-        if (Pattern.compile(replaced).matcher(pattern).matches()) {
+        if(Pattern.compile(replaced).matcher(pattern).matches()) {
           return replaced.contains("*") ? 0 : 1;
         }
       }
@@ -308,17 +321,17 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     void write(String fieldName, Object value) throws IOException {
-      if (fieldName != null) {
+      if(fieldName != null) {
         path.push(fieldName);
         updateCurrentPath();
       }
 
       //try to handle all primitives/special cases before treating this as json object
-      if (value != null && !writePrimitive(value) && !writeSpecial(value) && !writeEnum(value) && !writeList(value) && !writeMap(value)) {
+      if(value != null && !writePrimitive(value) && !writeSpecial(value) && !writeEnum(value) && !writeList(value) && !writeMap(value)) {
         writeObject(value);
       }
 
-      if (fieldName != null) {
+      if(fieldName != null) {
         path.pop();
         updateCurrentPath();
       }
@@ -326,7 +339,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
     void updateCurrentPath() {
       StringBuilder builder = new StringBuilder();
-      for (String s : path) {
+      for(String s : path) {
         builder.append(".");
         builder.append(s);
       }

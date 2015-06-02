@@ -16,6 +16,7 @@ public class TestObject {
   public static final String PUBLIC_FIELD = "public";
   private static final String PRIVATE_FIELD = "private";
 
+  private TestSubobject sub;
   private String str1;
   private String str2;
   @JsonIgnore
@@ -23,7 +24,6 @@ public class TestObject {
   private String ignoredIndirect;
   private Date date;
   private int int1;
-  private TestSubobject sub;
   private List<String> list;
   private Map<String, String> mapOfStrings;
   private Map<Integer, String> mapWithIntKeys;
