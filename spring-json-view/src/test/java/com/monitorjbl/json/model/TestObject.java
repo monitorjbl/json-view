@@ -3,6 +3,7 @@ package com.monitorjbl.json.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -153,5 +154,27 @@ public class TestObject {
 
   public void setMapOfObjects(Map<String, TestSubobject> mapOfObjects) {
     this.mapOfObjects = mapOfObjects;
+  }
+
+  @Override
+  public String toString() {
+    return "TestObject{" +
+        "str1='" + str1 + '\'' +
+        ", str2='" + str2 + '\'' +
+        ", ignoredDirect='" + ignoredDirect + '\'' +
+        ", ignoredIndirect='" + ignoredIndirect + '\'' +
+        ", date=" + date +
+        ", int1=" + int1 +
+        ", sub=" + sub +
+        ", list=" + list +
+        ", mapOfStrings=" + mapOfStrings +
+        ", mapWithIntKeys=" + mapWithIntKeys +
+        ", stringArray=" + Arrays.toString(stringArray) +
+        ", byteArray=" + Arrays.toString(byteArray) +
+        ", intArray=" + Arrays.toString(intArray) +
+        ", objArray=" + Arrays.toString(objArray) +
+        ", listOfObjects=" + listOfObjects +
+        ", mapOfObjects=" + mapOfObjects +
+        '}';
   }
 }

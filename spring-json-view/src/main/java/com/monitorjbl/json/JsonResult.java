@@ -10,6 +10,10 @@ public class JsonResult {
   /**
    * Use the provided {@code JsonView} object to serialize
    * the return value.
+   *
+   * @param view JsonView used to render JSON
+   * @param <E> Type of object being rendered
+   * @return ResultWrapper to provide return value
    */
   @SuppressWarnings("unchecked")
   public <E> ResultWrapper<E> use(JsonView<E> view) {
@@ -17,12 +21,16 @@ public class JsonResult {
     return new ResultWrapper<>(view);
   }
 
-  public static JsonResult instance(){
+  public static JsonResult instance() {
     return instance;
   }
 
   static JsonView get() {
-    return current == null ? null : current.get();
+    return current.get();
+  }
+
+  static void unset(){
+    current.remove();
   }
 
   public static class ResultWrapper<T> {
@@ -34,6 +42,8 @@ public class JsonResult {
 
     /**
      * Returns the object being serialized
+     *
+     * @return the object
      */
     public T returnValue() {
       return obj.getValue();

@@ -6,6 +6,8 @@ import com.monitorjbl.json.JsonView;
 import com.monitorjbl.json.Match;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestSubobject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +21,7 @@ import java.util.Map;
 
 @Controller
 public class JsonController {
+  Logger log = LoggerFactory.getLogger(JsonController.class);
   private JsonResult json = JsonResult.instance();
 
   @RequestMapping(method = RequestMethod.GET, value = "/ready")
@@ -81,6 +84,8 @@ public class JsonController {
     obj.setStr2("asdf");
     list.add(obj);
 
+    log.debug("GET testList()");
+
     json.use(JsonView.with(list)
         .onClass(TestObject.class, Match.match()
             .exclude("int1")
@@ -93,6 +98,7 @@ public class JsonController {
     if (object.getDate().getTime() != 1433214360187L) {
       throw new RuntimeException("field not set properly");
     }
+    log.debug("POST testNoninterference()");
     return object;
   }
 

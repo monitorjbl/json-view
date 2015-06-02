@@ -1,5 +1,7 @@
 package com.monitorjbl.json;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -9,6 +11,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import java.util.List;
 
 public class JsonViewReturnValueHandler implements HandlerMethodReturnValueHandler {
+  Logger log = LoggerFactory.getLogger(JsonViewReturnValueHandler.class);
 
   private final HandlerMethodReturnValueHandler delegate;
 
@@ -26,7 +29,12 @@ public class JsonViewReturnValueHandler implements HandlerMethodReturnValueHandl
     Object val = returnValue;
     if (JsonResult.get() != null) {
       val = JsonResult.get();
+      JsonResult.unset();
+      log.debug("Found [" + ((JsonView) val).getValue().getClass() + "] to serialize");
+    } else {
+      log.debug("No JsonView found for thread, using returned value");
     }
+
     delegate.handleReturnValue(val, returnType, mavContainer, webRequest);
   }
 
