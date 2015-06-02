@@ -16,20 +16,20 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
 
   @Autowired
   private RequestMappingHandlerAdapter adapter;
-  private final ObjectMapper mapper;
+  private final JsonViewMessageConverter converter;
 
   public JsonViewSupportFactoryBean() {
-    this.mapper = new ObjectMapper();
+    this(new ObjectMapper());
   }
 
   public JsonViewSupportFactoryBean(ObjectMapper mapper) {
-    this.mapper = mapper;
+    this.converter = new JsonViewMessageConverter(mapper.copy());
   }
 
   @Override
   public void afterPropertiesSet() throws Exception {
     List<HandlerMethodReturnValueHandler> handlers = new ArrayList<>(adapter.getReturnValueHandlers());
-    adapter.setMessageConverters(Collections.<HttpMessageConverter<?>>singletonList(new JsonViewMessageConverter(mapper.copy())));
+    adapter.setMessageConverters(Collections.<HttpMessageConverter<?>>singletonList(converter));
     decorateHandlers(handlers);
     adapter.setReturnValueHandlers(handlers);
   }
@@ -39,7 +39,7 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
       if (handler instanceof RequestResponseBodyMethodProcessor) {
         int index = handlers.indexOf(handler);
         List<HttpMessageConverter<?>> converters = new ArrayList<>(adapter.getMessageConverters());
-        converters.add(new JsonViewMessageConverter(mapper.copy()));
+        converters.add(converter);
         handlers.set(index, new JsonViewReturnValueHandler(converters));
         break;
       }
