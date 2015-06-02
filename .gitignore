@@ -2,3 +2,4 @@
 *.iws
 *.ipr
 target
+.DS_Store

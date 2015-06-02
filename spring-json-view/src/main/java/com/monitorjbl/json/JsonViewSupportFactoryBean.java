@@ -1,5 +1,6 @@
 package com.monitorjbl.json;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -15,11 +16,20 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
 
   @Autowired
   private RequestMappingHandlerAdapter adapter;
+  private final JsonViewMessageConverter converter;
+
+  public JsonViewSupportFactoryBean() {
+    this.converter = new JsonViewMessageConverter();
+  }
+
+  public JsonViewSupportFactoryBean(ObjectMapper mapper) {
+    this.converter = new JsonViewMessageConverter(mapper);
+  }
 
   @Override
   public void afterPropertiesSet() throws Exception {
     List<HandlerMethodReturnValueHandler> handlers = new ArrayList<>(adapter.getReturnValueHandlers());
-    adapter.setMessageConverters(Collections.<HttpMessageConverter<?>>singletonList(new JsonViewMessageConverter()));
+    adapter.setMessageConverters(Collections.<HttpMessageConverter<?>>singletonList(converter));
     decorateHandlers(handlers);
     adapter.setReturnValueHandlers(handlers);
   }
@@ -29,7 +39,7 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
       if (handler instanceof RequestResponseBodyMethodProcessor) {
         int index = handlers.indexOf(handler);
         List<HttpMessageConverter<?>> converters = new ArrayList<>(adapter.getMessageConverters());
-        converters.add(new JsonViewMessageConverter());
+        converters.add(converter);
         handlers.set(index, new JsonViewReturnValueHandler(converters));
         break;
       }

@@ -7,6 +7,7 @@ import com.monitorjbl.json.Match;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestSubobject;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -84,6 +85,15 @@ public class JsonController {
         .onClass(TestObject.class, Match.match()
             .exclude("int1")
             .include("ignoredDirect")));
+  }
+
+  @RequestMapping(method = RequestMethod.POST, value = "/bean")
+  @ResponseBody
+  public TestObject acceptData(@RequestBody TestObject object) {
+    if (object.getDate().getTime() != 1433214360187L) {
+      throw new RuntimeException("field not set properly");
+    }
+    return object;
   }
 
   @RequestMapping(method = RequestMethod.GET, value = "/map")

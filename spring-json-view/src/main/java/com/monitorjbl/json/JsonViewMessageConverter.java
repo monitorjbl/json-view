@@ -19,6 +19,14 @@ public class JsonViewMessageConverter extends MappingJackson2HttpMessageConverte
     setObjectMapper(defaultMapper);
   }
 
+  public JsonViewMessageConverter(ObjectMapper mapper) {
+    super();
+    SimpleModule module = new SimpleModule();
+    module.addSerializer(JsonView.class, new JsonViewSerializer());
+    mapper.registerModule(module);
+    setObjectMapper(mapper);
+  }
+
   @Override
   protected void writeInternal(Object object, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
     super.writeInternal(object, outputMessage);
