@@ -195,6 +195,14 @@ public class WriterTest {
   }
 
   @Test
+  public void testWriteSpecial_class() throws Exception {
+    Class cls = TestObject.class;
+    sut.writeSpecial(cls);
+    verify(jgen, times(1)).writeString(cls.getCanonicalName());
+  }
+
+
+  @Test
   public void testWriteList_stringList() throws Exception {
     assertTrue(sut.writeList(newArrayList("val1", "val2")));
     verify(jgen, times(1)).writeStartArray();

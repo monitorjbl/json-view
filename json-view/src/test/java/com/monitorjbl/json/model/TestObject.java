@@ -36,6 +36,7 @@ public class TestObject {
   private TestEnum testEnum;
   private URL url;
   private URI uri;
+  private Class cls;
 
   public String getStr1() {
     return str1;
@@ -187,5 +188,13 @@ public class TestObject {
 
   public void setUri(URI uri) {
     this.uri = uri;
+  }
+
+  public Class getCls() {
+    return cls;
+  }
+
+  public void setCls(Class cls) {
+    this.cls = cls;
   }
 }

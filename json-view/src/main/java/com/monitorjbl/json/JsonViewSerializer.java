@@ -87,6 +87,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         jgen.writeString(obj.toString());
       } else if (obj instanceof URI) {
         jgen.writeString(obj.toString());
+      } else if (obj instanceof Class) {
+        jgen.writeString(((Class) obj).getCanonicalName());
       } else {
         return false;
       }
@@ -225,7 +227,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     boolean fieldAllowed(Field field, Class declaringClass) {
       String name = field.getName();
       String prefix = currentPath.length() > 0 ? currentPath + "." : "";
-      if(Modifier.isStatic(field.getModifiers())){
+      if (Modifier.isStatic(field.getModifiers())) {
         return false;
       }
 

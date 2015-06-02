@@ -445,6 +445,16 @@ public class JsonViewSerializerTest {
   }
 
   @Test
+  public void testClass() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setCls(TestSubobject.class);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(ref.getCls().getCanonicalName(), obj.get("cls"));
+  }
+
+  @Test
   public void testEnums() throws Exception {
     TestObject ref = new TestObject();
     ref.setTestEnum(TestEnum.VALUE_A);
