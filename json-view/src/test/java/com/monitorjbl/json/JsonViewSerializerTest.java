@@ -14,6 +14,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -420,6 +422,26 @@ public class JsonViewSerializerTest {
     assertEquals(2, objList.size());
     assertEquals(t1.getInt1(), objList.get(0).get("int1"));
     assertEquals(t2.getInt1(), objList.get(1).get("int1"));
+  }
+
+  @Test
+  public void testURLs() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setUrl(new URL("http://google.com"));
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(ref.getUrl().toString(), obj.get("url"));
+  }
+
+  @Test
+  public void testURIs() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setUri(new URI("http://google.com"));
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(ref.getUri().toString(), obj.get("uri"));
   }
 
   @Test

@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -55,8 +57,6 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     boolean writePrimitive(Object obj) throws IOException {
       if (obj instanceof String) {
         jgen.writeString((String) obj);
-      } else if (obj instanceof Date) {
-        jgen.writeNumber(((Date) obj).getTime());
       } else if (obj instanceof Integer) {
         jgen.writeNumber((Integer) obj);
       } else if (obj instanceof Long) {
@@ -79,7 +79,20 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       return true;
     }
 
-    private boolean writeEnum(Object obj) throws IOException {
+    boolean writeSpecial(Object obj) throws IOException {
+      if (obj instanceof Date) {
+        jgen.writeNumber(((Date) obj).getTime());
+      } else if (obj instanceof URL) {
+        jgen.writeString(obj.toString());
+      } else if (obj instanceof URI) {
+        jgen.writeString(obj.toString());
+      } else {
+        return false;
+      }
+      return true;
+    }
+
+    boolean writeEnum(Object obj) throws IOException {
       if (obj.getClass().isEnum()) {
         jgen.writeString(obj.toString());
       } else {
@@ -294,8 +307,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         updateCurrentPath();
       }
 
-      //try to handle all primitives before treating this as json object
-      if (value != null && !writePrimitive(value) && !writeEnum(value) && !writeList(value) && !writeMap(value)) {
+      //try to handle all primitives/special cases before treating this as json object
+      if (value != null && !writePrimitive(value) && !writeSpecial(value) && !writeEnum(value) && !writeList(value) && !writeMap(value)) {
         writeObject(value);
       }
 

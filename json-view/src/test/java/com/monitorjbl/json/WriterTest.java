@@ -8,6 +8,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.net.URI;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 
@@ -92,13 +94,6 @@ public class WriterTest {
   }
 
   @Test
-  public void testWritePrimitive_date() throws Exception {
-    Date dt = new Date();
-    sut.writePrimitive(dt);
-    verify(jgen, times(1)).writeNumber(dt.getTime());
-  }
-
-  @Test
   public void testWritePrimitive_int() throws Exception {
     int primitive = 1;
     Integer obj = 2;
@@ -176,6 +171,27 @@ public class WriterTest {
     sut.writePrimitive(obj);
     verify(jgen, times(1)).writeBoolean(true);
     verify(jgen, times(1)).writeBoolean(false);
+  }
+
+  @Test
+  public void testWriteSpecial_date() throws Exception {
+    Date dt = new Date();
+    sut.writeSpecial(dt);
+    verify(jgen, times(1)).writeNumber(dt.getTime());
+  }
+
+  @Test
+  public void testWriteSpecial_url() throws Exception {
+    URL url = new URL("http://google.com");
+    sut.writeSpecial(url);
+    verify(jgen, times(1)).writeString(url.toString());
+  }
+
+  @Test
+  public void testWriteSpecial_uri() throws Exception {
+    URI uri = new URI("http://google.com");
+    sut.writeSpecial(uri);
+    verify(jgen, times(1)).writeString(uri.toString());
   }
 
   @Test

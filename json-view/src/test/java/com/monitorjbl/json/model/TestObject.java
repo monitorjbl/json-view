@@ -3,6 +3,8 @@ package com.monitorjbl.json.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.net.URI;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,8 @@ public class TestObject {
   private List<TestSubobject> listOfObjects;
   private Map<String, TestSubobject> mapOfObjects;
   private TestEnum testEnum;
+  private URL url;
+  private URI uri;
 
   public String getStr1() {
     return str1;
@@ -164,5 +168,21 @@ public class TestObject {
 
   public void setTestEnum(TestEnum testEnum) {
     this.testEnum = testEnum;
+  }
+
+  public URL getUrl() {
+    return url;
+  }
+
+  public void setUrl(URL url) {
+    this.url = url;
+  }
+
+  public URI getUri() {
+    return uri;
+  }
+
+  public void setUri(URI uri) {
+    this.uri = uri;
   }
 }
