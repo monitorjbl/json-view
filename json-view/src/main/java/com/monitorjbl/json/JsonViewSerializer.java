@@ -105,7 +105,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
     boolean writeEnum(Object obj) throws IOException {
       if(obj.getClass().isEnum()) {
-        jgen.writeString(obj.toString());
+        jgen.writeString(((Enum) obj).name());
       } else {
         return false;
       }
