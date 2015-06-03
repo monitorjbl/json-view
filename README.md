@@ -46,7 +46,7 @@ To use it, simply add this project to your classpath using your build tool of ch
 <dependency>
     <groupId>com.monitorjbl</groupId>
     <artifactId>json-view</artifactId>
-    <version>0.7</version>
+    <version>0.8</version>
 </dependency>
 ```
 
@@ -196,7 +196,7 @@ To use it, simply add this project to your classpath using your build tool of ch
 <dependency>
     <groupId>com.monitorjbl</groupId>
     <artifactId>spring-json-view</artifactId>
-    <version>0.7</version>
+    <version>0.8</version>
 </dependency>
 ```
 
