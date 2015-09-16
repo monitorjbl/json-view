@@ -1,12 +1,17 @@
 package com.monitorjbl.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.monitorjbl.json.JsonViewSerializer.JsonWriter;
 import com.monitorjbl.json.model.TestObject;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.net.URI;
 import java.net.URL;
@@ -20,18 +25,23 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(SerializerProvider.class)
 public class WriterTest {
   @Mock
   JsonGenerator jgen;
   @Mock
   JsonView result;
+  SerializerProvider serializerProvider;
 
+  // has to be mocked with powermock due to final methods
   JsonWriter sut;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    sut = new JsonWriter(jgen, result, 10000);
+    serializerProvider = PowerMockito.mock(SerializerProvider.class);
+    sut = new JsonWriter(serializerProvider, jgen, result, 10000);
   }
 
   @Test
@@ -177,7 +187,7 @@ public class WriterTest {
   public void testWriteSpecial_date() throws Exception {
     Date dt = new Date();
     sut.writeSpecial(dt);
-    verify(jgen, times(1)).writeNumber(dt.getTime());
+    verify(serializerProvider, times(1)).defaultSerializeDateValue(dt, jgen);
   }
 
   @Test

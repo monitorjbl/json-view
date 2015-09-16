@@ -34,7 +34,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
   @Override
   public void serialize(JsonView result, JsonGenerator jgen, SerializerProvider serializers) throws IOException {
-    new JsonWriter(jgen, result, cacheSize).write(null, result.getValue());
+    new JsonWriter(serializers, jgen, result, cacheSize).write(null, result.getValue());
   }
 
   static class JsonWriter {
@@ -45,22 +45,25 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     String currentPath = "";
     Match currentMatch = null;
 
+    final SerializerProvider serializerProvider;
     final JsonGenerator jgen;
     final JsonView result;
     final int cacheSize;
 
-    JsonWriter(JsonGenerator jgen, JsonView result, int cacheSize) {
+    JsonWriter(SerializerProvider serializerProvider, JsonGenerator jgen, JsonView result, int cacheSize) {
+      this.serializerProvider = serializerProvider;
       this.jgen = jgen;
       this.result = result;
       this.cacheSize = cacheSize;
     }
 
     //internal use only to encapsulate what the current state was
-    private JsonWriter(JsonGenerator jgen, JsonView result, int cacheSize, Match currentMatch) {
+    private JsonWriter(JsonGenerator jgen, JsonView result, int cacheSize, Match currentMatch, SerializerProvider serializerProvider) {
       this.jgen = jgen;
       this.result = result;
       this.cacheSize = cacheSize;
       this.currentMatch = currentMatch;
+      this.serializerProvider = serializerProvider;
     }
 
     boolean writePrimitive(Object obj) throws IOException {
@@ -90,7 +93,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
     boolean writeSpecial(Object obj) throws IOException {
       if(obj instanceof Date) {
-        jgen.writeNumber(((Date) obj).getTime());
+        serializerProvider.defaultSerializeDateValue((Date) obj, jgen);
       } else if(obj instanceof URL) {
         jgen.writeString(obj.toString());
       } else if(obj instanceof URI) {
@@ -129,7 +132,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
         jgen.writeStartArray();
         for(Object o : iter) {
-          new JsonWriter(jgen, result, cacheSize, currentMatch).write(null, o);
+          new JsonWriter(jgen, result, cacheSize, currentMatch, serializerProvider).write(null, o);
         }
         jgen.writeEndArray();
       } else {
@@ -197,7 +200,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         jgen.writeStartObject();
         for(Object key : map.keySet()) {
           jgen.writeFieldName(key.toString());
-          new JsonWriter(jgen, result, cacheSize, currentMatch).write(null, map.get(key));
+          new JsonWriter(jgen, result, cacheSize, currentMatch, serializerProvider).write(null, map.get(key));
         }
         jgen.writeEndObject();
       } else {
@@ -220,7 +223,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             if(val != null && fieldAllowed(field, obj.getClass())) {
               String name = field.getName();
               jgen.writeFieldName(name);
-              new JsonWriter(jgen, result, cacheSize, currentMatch).write(name, val);
+              new JsonWriter(jgen, result, cacheSize, currentMatch, serializerProvider).write(name, val);
             }
           } catch(IllegalArgumentException | IllegalAccessException e) {
             e.printStackTrace();

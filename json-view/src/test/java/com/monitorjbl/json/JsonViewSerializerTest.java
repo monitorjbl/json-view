@@ -1,6 +1,7 @@
 package com.monitorjbl.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
@@ -16,6 +17,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -417,6 +419,20 @@ public class JsonViewSerializerTest {
     String serialized = sut.writeValueAsString(JsonView.with(ref));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
     assertEquals(ref.getDate().getTime(), obj.get("date"));
+  }
+
+  @Test
+  public void testDate_withFormatter() throws Exception {
+    SimpleDateFormat fmt = new SimpleDateFormat("dd-MM-yyyy");
+    sut.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    sut.setDateFormat(fmt);
+
+    TestObject ref = new TestObject();
+    ref.setDate(new Date());
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    assertEquals(fmt.format(ref.getDate()), obj.get("date"));
   }
 
   @Test
