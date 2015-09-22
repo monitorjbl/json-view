@@ -291,3 +291,26 @@ public class JsonController {
   }
 }
 ```
+
+# Building from source
+
+To build, all you need is Java 7+, Maven 3+, and git:
+
+```
+# Checkout code from GitHub
+git clone https://github.com/monitorjbl/json-view.git
+cd json-view
+
+# Build and install to local Maven repo
+mvn clean install
+```
+
+Once you've done this, you can refer to the latest version of the library in your POM, like so:
+
+```
+<dependency>
+  <groupId>com.monitorjbl</groupId>
+  <artifactId>json-view</artifactId>
+  <version>0.9-SNAPSHOT</version>
+</dependency>
+```
