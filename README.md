@@ -1,3 +1,5 @@
+[![shippable](https://api.shippable.com/projects/55cfbb00edd7f2c052a980a5/badge/master)](https://app.shippable.com/projects/55cfbb00edd7f2c052a980a5)
+
 # Programmatic JSON Views
 
 Ever needed to programmatically include or exclude a field when serializing object with Jackson? Well, if you have then you probably know by now that it's very difficult to do. Jackson is by nature very declarative (annotations for everything!), so doing something programmatically gets ugly fast.
