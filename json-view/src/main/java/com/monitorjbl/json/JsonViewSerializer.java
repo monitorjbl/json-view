@@ -66,6 +66,17 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       this.serializerProvider = serializerProvider;
     }
 
+    private JsonWriter(JsonGenerator jgen, JsonView result, int cacheSize, Match currentMatch,
+                       String currentPath, Stack<String> path, SerializerProvider serializerProvider) {
+      this.jgen = jgen;
+      this.result = result;
+      this.cacheSize = cacheSize;
+      this.currentMatch = currentMatch;
+      this.currentPath = currentPath;
+      this.path = path;
+      this.serializerProvider = serializerProvider;
+    }
+
     boolean writePrimitive(Object obj) throws IOException {
       if(obj instanceof String) {
         jgen.writeString((String) obj);
@@ -132,7 +143,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
         jgen.writeStartArray();
         for(Object o : iter) {
-          new JsonWriter(jgen, result, cacheSize, currentMatch, serializerProvider).write(null, o);
+          new JsonWriter(jgen, result, cacheSize, currentMatch, currentPath, path, serializerProvider).write(null, o);
         }
         jgen.writeEndArray();
       } else {
@@ -223,7 +234,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             if(val != null && fieldAllowed(field, obj.getClass())) {
               String name = field.getName();
               jgen.writeFieldName(name);
-              new JsonWriter(jgen, result, cacheSize, currentMatch, serializerProvider).write(name, val);
+              new JsonWriter(jgen, result, cacheSize, currentMatch, currentPath, path, serializerProvider).write(name, val);
             }
           } catch(IllegalArgumentException | IllegalAccessException e) {
             e.printStackTrace();

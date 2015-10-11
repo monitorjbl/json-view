@@ -512,4 +512,28 @@ public class JsonViewSerializerTest {
     assertNull(obj.get("PUBLIC_FIELD"));
     assertNull(obj.get("PRIVATE_FIELD"));
   }
+
+  @Test
+  public void testPathNotationInList() throws Exception {
+    TestSubobject sub1 = new TestSubobject("a");
+    TestSubobject sub2 = new TestSubobject("b");
+    sub1.setSub(sub2);
+    TestSubobject sub3 = new TestSubobject("c");
+    sub2.setSub(sub3);
+    TestObject ref = new TestObject();
+    ref.setListOfObjects(Arrays.asList(sub1, sub2));
+
+    String serialized = sut.writeValueAsString(
+        JsonView.with(ref)
+            .onClass(TestObject.class, match()
+                .exclude("listOfObjects.sub.val")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("listOfObjects"));
+    List<Map<String, Map<String, Map<String, Map>>>> list = (List<Map<String, Map<String, Map<String, Map>>>>) obj.get("listOfObjects");
+    assertEquals(2, list.size());
+    assertNull(list.get(0).get("sub").get("val"));
+    assertNotNull(list.get(0).get("sub").get("sub").get("val"));
+    assertNull(list.get(1).get("sub").get("val"));
+  }
 }
