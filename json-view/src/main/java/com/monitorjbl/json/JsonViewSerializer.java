@@ -2,12 +2,18 @@ package com.monitorjbl.json;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.net.URL;
@@ -96,6 +102,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         jgen.writeNumber((Byte) obj);
       } else if(obj instanceof Boolean) {
         jgen.writeBoolean((Boolean) obj);
+      } else if(obj == null) {
+        jgen.writeNull();
       } else {
         return false;
       }
@@ -231,7 +239,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             field.setAccessible(true);
             Object val = field.get(obj);
 
-            if(val != null && fieldAllowed(field, obj.getClass())) {
+            if(valueAllowed(val, obj.getClass()) && fieldAllowed(field, obj.getClass())) {
               String name = field.getName();
               jgen.writeFieldName(name);
               new JsonWriter(jgen, result, cacheSize, currentMatch, currentPath, path, serializerProvider).write(name, val);
@@ -244,6 +252,14 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       }
 
       jgen.writeEndObject();
+    }
+
+    boolean valueAllowed(Object value, Class cls) {
+      return value != null
+          || (serializerProvider.getConfig() != null
+          && serializerProvider.getConfig().getSerializationInclusion() == Include.ALWAYS
+          && cls.getAnnotation(JsonSerialize.class) == null)
+          || (cls.getAnnotation(JsonSerialize.class) != null && readClassAnnotation(cls, JsonSerialize.class, "include") == Inclusion.ALWAYS);
     }
 
     @SuppressWarnings("unchecked")
@@ -299,19 +315,6 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       }
     }
 
-    boolean annotatedWithIgnore(Field f) {
-      if(!hasJsonIgnoreCache.containsKey(f)) {
-        JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
-        JsonIgnoreProperties ignoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
-        if(hasJsonIgnoreCache.size() > cacheSize) {
-          hasJsonIgnoreCache.remove(hasJsonIgnoreCache.keySet().iterator().next());
-        }
-        hasJsonIgnoreCache.put(f, (jsonIgnore != null && jsonIgnore.value()) ||
-            (ignoreProperties != null && Arrays.asList(ignoreProperties.value()).contains(f.getName())));
-      }
-      return hasJsonIgnoreCache.get(f);
-    }
-
     /**
      * Returns one of the following values:
      * <pre>
@@ -341,7 +344,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       }
 
       //try to handle all primitives/special cases before treating this as json object
-      if(value != null && !writePrimitive(value) && !writeSpecial(value) && !writeEnum(value) && !writeList(value) && !writeMap(value)) {
+      if(!writePrimitive(value) && !writeSpecial(value) && !writeEnum(value) && !writeList(value) && !writeMap(value)) {
         writeObject(value);
       }
 
@@ -358,6 +361,39 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         builder.append(s);
       }
       currentPath = builder.length() > 0 ? builder.toString().substring(1) : "";
+    }
+
+    boolean annotatedWithIgnore(Field f) {
+      if(!hasJsonIgnoreCache.containsKey(f)) {
+        JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
+        JsonIgnoreProperties ignoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
+        if(hasJsonIgnoreCache.size() > cacheSize) {
+          hasJsonIgnoreCache.remove(hasJsonIgnoreCache.keySet().iterator().next());
+        }
+        hasJsonIgnoreCache.put(f, (jsonIgnore != null && jsonIgnore.value()) ||
+            (ignoreProperties != null && Arrays.asList(ignoreProperties.value()).contains(f.getName())));
+      }
+      return hasJsonIgnoreCache.get(f);
+    }
+
+    @SuppressWarnings("unchecked")
+    <E> E readClassAnnotation(Class cls, Class annotationType, String methodName) {
+      try {
+        for(Annotation an : cls.getAnnotations()) {
+          Class<? extends Annotation> type = an.annotationType();
+          if(an.annotationType().equals(annotationType)) {
+            for(Method method : type.getDeclaredMethods()) {
+              if(method.getName().equals(methodName)) {
+                return (E) method.invoke(an, (Object[]) null);
+              }
+            }
+            throw new IllegalArgumentException("Method " + methodName + " not found on annotation " + annotationType);
+          }
+        }
+        throw new IllegalArgumentException("Annotation " + annotationType + " not found on class " + cls);
+      } catch(InvocationTargetException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 }

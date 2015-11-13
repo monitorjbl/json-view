@@ -1,5 +1,6 @@
 package com.monitorjbl.json;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -7,6 +8,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Ints;
 import com.monitorjbl.json.model.TestChildObject;
+import com.monitorjbl.json.model.TestNonNulls;
+import com.monitorjbl.json.model.TestNulls;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestObject.TestEnum;
 import com.monitorjbl.json.model.TestSubobject;
@@ -28,6 +31,7 @@ import java.util.Map;
 import static com.monitorjbl.json.Match.match;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -535,5 +539,52 @@ public class JsonViewSerializerTest {
     assertNull(list.get(0).get("sub").get("val"));
     assertNotNull(list.get(0).get("sub").get("sub").get("val"));
     assertNull(list.get(1).get("sub").get("val"));
+  }
+
+  @Test
+  public void testWriteNullValues_enabledGlobally() throws Exception {
+    TestObject ref = new TestObject();
+    sut.setSerializationInclusion(Include.ALWAYS);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertTrue(obj.containsKey("str2"));
+    assertNull(obj.get("str2"));
+  }
+
+  @Test
+  public void testWriteNullValues_disabledGlobally() throws Exception {
+    TestObject ref = new TestObject();
+    sut.setSerializationInclusion(Include.NON_NULL);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    System.out.println(serialized);
+    assertFalse(obj.containsKey("str2"));
+  }
+
+  @Test
+  public void testWriteNullValues_enabledForClass() throws Exception {
+    TestNulls ref = new TestNulls();
+    sut.setSerializationInclusion(Include.NON_NULL);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertTrue(obj.containsKey("val"));
+    assertNull(obj.get("val"));
+  }
+
+  @Test
+  public void testWriteNullValues_disabledForClass() throws Exception {
+    TestNonNulls ref = new TestNonNulls();
+    sut.setSerializationInclusion(Include.ALWAYS);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertFalse(obj.containsKey("val"));
   }
 }
