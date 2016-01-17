@@ -1,4 +1,4 @@
-package com.monitorjbl.json.server;
+package com.monitorjbl.json.server.controller;
 
 import com.google.common.collect.ImmutableMap;
 import com.monitorjbl.json.JsonResult;
@@ -21,8 +21,8 @@ import java.util.Map;
 
 @Controller
 public class JsonController {
-  Logger log = LoggerFactory.getLogger(JsonController.class);
-  private JsonResult json = JsonResult.instance();
+  private static final Logger log = LoggerFactory.getLogger(JsonController.class);
+  private final JsonResult json = JsonResult.instance();
 
   @RequestMapping(method = RequestMethod.GET, value = "/ready")
   @ResponseBody

@@ -1,11 +1,10 @@
 package com.monitorjbl.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.monitorjbl.json.server.JettyServer;
+import com.monitorjbl.json.server.ConfigServer;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,20 +23,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class LiveTest {
-  private static final Logger log = LoggerFactory.getLogger(LiveTest.class);
-  private static JettyServer server = new JettyServer();
+public abstract class ConfigTest {
 
-  @BeforeClass
-  public static void start() throws InterruptedException {
-    server = new JettyServer();
+  protected static final Logger log = LoggerFactory.getLogger(XmlConfigurationTest.class);
+  protected static ConfigServer server;
+
+  public static void start() throws Exception {
     server.start(8080);
     boolean ready = false;
-    while (!ready) {
+    while(!ready) {
       try {
         new URL("http://localhost:8080/ready").openStream();
         ready = true;
-      } catch (Exception e) {
+      } catch(Exception e) {
         Thread.sleep(500);
       }
     }
@@ -66,7 +64,7 @@ public class LiveTest {
     List<Map<String, Object>> list = new ObjectMapper().readValue(Request.Get("http://localhost:8080/list").execute().returnContent().asStream(), ArrayList.class);
 
     assertEquals(2, list.size());
-    for (Map<String, Object> map : list) {
+    for(Map<String, Object> map : list) {
       assertEquals("ignored", map.get("ignoredDirect"));
       assertNull(map.get("int1"));
     }
@@ -80,7 +78,7 @@ public class LiveTest {
     final AtomicInteger errors = new AtomicInteger(0);
 
     log.info("Multithreading test starting");
-    for (int i = 0; i < 100; i++) {
+    for(int i = 0; i < 100; i++) {
       executorService.submit(new Runnable() {
         public void run() {
           int c = counter.addAndGet(1);
@@ -88,7 +86,7 @@ public class LiveTest {
             log.debug("testNoninterference() " + c + " started");
             testNoninterference();
             log.debug("testNoninterference() " + c + " passed");
-          } catch (Throwable e) {
+          } catch(Throwable e) {
             log.error("testNoninterference() " + c + " failed");
             errors.addAndGet(1);
           }
@@ -101,7 +99,7 @@ public class LiveTest {
             log.debug("testList() " + c + " started");
             testList();
             log.debug("testList() " + c + " passed");
-          } catch (Throwable e) {
+          } catch(Throwable e) {
             log.error("testList() " + c + " failed");
             errors.addAndGet(1);
           }
@@ -121,6 +119,7 @@ public class LiveTest {
     String ret = Request.Post("http://localhost:8080/bean").bodyString(
         "{\"date\":\"1433214360187\",\"str1\":\"test\",\"notReal\":\"asdfas\"}", ContentType.APPLICATION_JSON)
         .execute().returnContent().asString();
+    System.out.println(ret);
     assertEquals(5, ret.split("\n").length);
   }
 

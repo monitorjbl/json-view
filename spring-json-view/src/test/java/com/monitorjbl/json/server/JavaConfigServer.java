@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
-public class JettyServer {
-  public static final Logger log = LoggerFactory.getLogger(JettyServer.class);
+public class JavaConfigServer implements ConfigServer{
+  public static final Logger log = LoggerFactory.getLogger(JavaConfigServer.class);
   private boolean running;
   private Thread thread;
 
   public synchronized void start(final int port) {
-    if (thread != null) {
+    if(thread != null) {
       throw new IllegalStateException("Server is already running");
     }
 
@@ -31,19 +31,20 @@ public class JettyServer {
           final ServletContextHandler context = new ServletContextHandler();
           context.setContextPath("/");
           context.addServlet(servletHolder, "/*");
+
           server.setHandler(context);
 
           running = true;
           server.start();
           log.info("Server started");
 
-          while (running) {
+          while(running) {
             Thread.sleep(1);
           }
 
           server.stop();
           log.info("Server stopped");
-        } catch (Exception e) {
+        } catch(Exception e) {
           log.error("Server exception", e);
           throw new RuntimeException(e);
         }
@@ -56,12 +57,12 @@ public class JettyServer {
     running = false;
     try {
       thread.join();
-    } catch (InterruptedException e) {
+    } catch(InterruptedException e) {
       e.printStackTrace();
     }
   }
 
   public static void main(String[] args) {
-    new JettyServer().start(8080);
+    new JavaConfigServer().start(9090);
   }
 }
