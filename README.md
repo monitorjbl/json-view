@@ -48,7 +48,7 @@ To use it, simply add this project to your classpath using your build tool of ch
 <dependency>
     <groupId>com.monitorjbl</groupId>
     <artifactId>json-view</artifactId>
-    <version>0.8</version>
+    <version>0.9</version>
 </dependency>
 ```
 
@@ -198,7 +198,7 @@ To use it, simply add this project to your classpath using your build tool of ch
 <dependency>
     <groupId>com.monitorjbl</groupId>
     <artifactId>spring-json-view</artifactId>
-    <version>0.8</version>
+    <version>0.9</version>
 </dependency>
 ```
 
@@ -220,7 +220,7 @@ public class Context extends WebMvcConfigurerAdapter {
 
 **XML config**
 ```xml
-<bean id="jsonViewSupport" class="com.monitorjbl.json.JsonViewSupportFactoryBean/>
+<bean id="jsonViewSupport" class="com.monitorjbl.json.JsonViewSupportFactoryBean"/>
 ```
 
 ## Usage
