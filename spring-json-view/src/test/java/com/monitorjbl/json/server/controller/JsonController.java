@@ -8,6 +8,7 @@ import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestSubobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -95,7 +96,7 @@ public class JsonController {
   @RequestMapping(method = RequestMethod.POST, value = "/bean")
   @ResponseBody
   public TestObject acceptData(@RequestBody TestObject object) {
-    if (object.getDate().getTime() != 1433214360187L) {
+    if(object.getDate().getTime() != 1433214360187L) {
       throw new RuntimeException("field not set properly");
     }
     log.debug("POST testNoninterference()");
@@ -107,7 +108,22 @@ public class JsonController {
   public Map<String, String> map() {
     return ImmutableMap.of(
         "red", "herring",
-        "blue", "fish"
-    );
+        "blue", "fish");
+  }
+
+  @RequestMapping(method = RequestMethod.GET, value = "/responseEntity")
+  @ResponseBody
+  public ResponseEntity<TestObject> responseEntity() {
+    TestObject obj = new TestObject();
+    obj.setInt1(4);
+    obj.setIgnoredDirect("ignored");
+    obj.setStr2("qwerqwer");
+    return ResponseEntity.accepted()
+        .header("TEST", "asdfasdf")
+        .body(json.use(JsonView.with(obj)
+            .onClass(TestObject.class, Match.match()
+                .exclude("int1")
+                .include("ignoredDirect")))
+            .returnValue());
   }
 }

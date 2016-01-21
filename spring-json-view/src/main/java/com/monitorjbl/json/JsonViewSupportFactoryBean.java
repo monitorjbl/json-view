@@ -5,6 +5,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
+import org.springframework.web.servlet.mvc.method.annotation.HttpEntityMethodProcessor;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor;
 
@@ -35,11 +36,13 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
   }
 
   private void decorateHandlers(List<HandlerMethodReturnValueHandler> handlers) {
-    for (HandlerMethodReturnValueHandler handler : handlers) {
-      if (handler instanceof RequestResponseBodyMethodProcessor) {
-        int index = handlers.indexOf(handler);
-        List<HttpMessageConverter<?>> converters = new ArrayList<>(adapter.getMessageConverters());
-        converters.add(converter);
+    List<HttpMessageConverter<?>> converters = new ArrayList<>(adapter.getMessageConverters());
+    converters.add(converter);
+    for(HandlerMethodReturnValueHandler handler : handlers) {
+      int index = handlers.indexOf(handler);
+      if(handler instanceof HttpEntityMethodProcessor) {
+        handlers.set(index, new JsonViewHttpEntityMethodProcessor(converters));
+      } else if(handler instanceof RequestResponseBodyMethodProcessor) {
         handlers.set(index, new JsonViewReturnValueHandler(converters));
         break;
       }

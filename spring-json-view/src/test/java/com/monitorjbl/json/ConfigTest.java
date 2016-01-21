@@ -2,7 +2,9 @@ package com.monitorjbl.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.monitorjbl.json.server.ConfigServer;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.fluent.Request;
+import org.apache.http.client.fluent.Response;
 import org.apache.http.entity.ContentType;
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -121,6 +123,19 @@ public abstract class ConfigTest {
         .execute().returnContent().asString();
     System.out.println(ret);
     assertEquals(5, ret.split("\n").length);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testResponseEntitySupport() throws Exception {
+    HttpResponse response = Request.Get("http://localhost:8080/responseEntity").execute().returnResponse();
+    Map<String, Object> map = new ObjectMapper().readValue(response.getEntity().getContent(), HashMap.class);
+
+    assertEquals(202, response.getStatusLine().getStatusCode());
+    assertEquals("asdfasdf", response.getFirstHeader("TEST").getValue());
+    assertEquals("qwerqwer", map.get("str2"));
+    assertEquals("ignored", map.get("ignoredDirect"));
+    assertNull(map.get("int1"));
   }
 
   @AfterClass

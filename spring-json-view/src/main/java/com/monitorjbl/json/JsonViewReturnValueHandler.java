@@ -11,7 +11,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import java.util.List;
 
 public class JsonViewReturnValueHandler implements HandlerMethodReturnValueHandler {
-  Logger log = LoggerFactory.getLogger(JsonViewReturnValueHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(JsonViewReturnValueHandler.class);
 
   private final HandlerMethodReturnValueHandler delegate;
 
@@ -27,9 +27,8 @@ public class JsonViewReturnValueHandler implements HandlerMethodReturnValueHandl
   @Override
   public void handleReturnValue(Object returnValue, MethodParameter returnType, ModelAndViewContainer mavContainer, NativeWebRequest webRequest) throws Exception {
     Object val = returnValue;
-    if (JsonResult.get() != null) {
-      val = JsonResult.get();
-      JsonResult.unset();
+    if(JsonResultRetriever.hasValue()) {
+      val = JsonResultRetriever.retrieve();
       log.debug("Found [" + ((JsonView) val).getValue().getClass() + "] to serialize");
     } else {
       log.debug("No JsonView found for thread, using returned value");
