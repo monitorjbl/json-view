@@ -23,7 +23,7 @@ public class JsonViewSerializerPerformance {
   public void setup() {
     sut = new ObjectMapper();
     SimpleModule module = new SimpleModule();
-    module.addSerializer(JsonView.class, new JsonViewSerializer(10));
+    module.addSerializer(JsonView.class, new JsonViewSerializer());
     sut.registerModule(module);
   }
 

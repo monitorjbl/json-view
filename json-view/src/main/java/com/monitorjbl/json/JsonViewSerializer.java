@@ -24,29 +24,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
-  private final int cacheSize;
-
-  public JsonViewSerializer() {
-    this(1000);
-  }
-
-  public JsonViewSerializer(int cacheSize) {
-    this.cacheSize = cacheSize;
-  }
 
   @Override
   public void serialize(JsonView result, JsonGenerator jgen, SerializerProvider serializers) throws IOException {
-    new JsonWriter(serializers, jgen, result, cacheSize).write(null, result.getValue());
+    new JsonWriter(serializers, jgen, result).write(null, result.getValue());
   }
 
   static class JsonWriter {
-    //caches the results of the @JsonIgnore test to cut down on expensive reflection calls
-    static final Map<Field, Boolean> hasJsonIgnoreCache = new ConcurrentHashMap<>();
-
     Stack<String> path = new Stack<>();
     String currentPath = "";
     Match currentMatch = null;
@@ -54,29 +41,25 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     final SerializerProvider serializerProvider;
     final JsonGenerator jgen;
     final JsonView result;
-    final int cacheSize;
 
-    JsonWriter(SerializerProvider serializerProvider, JsonGenerator jgen, JsonView result, int cacheSize) {
+    JsonWriter(SerializerProvider serializerProvider, JsonGenerator jgen, JsonView result) {
       this.serializerProvider = serializerProvider;
       this.jgen = jgen;
       this.result = result;
-      this.cacheSize = cacheSize;
     }
 
     //internal use only to encapsulate what the current state was
-    private JsonWriter(JsonGenerator jgen, JsonView result, int cacheSize, Match currentMatch, SerializerProvider serializerProvider) {
+    private JsonWriter(JsonGenerator jgen, JsonView result, Match currentMatch, SerializerProvider serializerProvider) {
       this.jgen = jgen;
       this.result = result;
-      this.cacheSize = cacheSize;
       this.currentMatch = currentMatch;
       this.serializerProvider = serializerProvider;
     }
 
-    private JsonWriter(JsonGenerator jgen, JsonView result, int cacheSize, Match currentMatch,
+    private JsonWriter(JsonGenerator jgen, JsonView result, Match currentMatch,
                        String currentPath, Stack<String> path, SerializerProvider serializerProvider) {
       this.jgen = jgen;
       this.result = result;
-      this.cacheSize = cacheSize;
       this.currentMatch = currentMatch;
       this.currentPath = currentPath;
       this.path = path;
@@ -151,7 +134,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
         jgen.writeStartArray();
         for(Object o : iter) {
-          new JsonWriter(jgen, result, cacheSize, currentMatch, currentPath, path, serializerProvider).write(null, o);
+          new JsonWriter(jgen, result, currentMatch, currentPath, path, serializerProvider).write(null, o);
         }
         jgen.writeEndArray();
       } else {
@@ -219,7 +202,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         jgen.writeStartObject();
         for(Object key : map.keySet()) {
           jgen.writeFieldName(key.toString());
-          new JsonWriter(jgen, result, cacheSize, currentMatch, serializerProvider).write(null, map.get(key));
+          new JsonWriter(jgen, result, currentMatch, serializerProvider).write(null, map.get(key));
         }
         jgen.writeEndObject();
       } else {
@@ -242,7 +225,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             if(valueAllowed(val, obj.getClass()) && fieldAllowed(field, obj.getClass())) {
               String name = field.getName();
               jgen.writeFieldName(name);
-              new JsonWriter(jgen, result, cacheSize, currentMatch, currentPath, path, serializerProvider).write(name, val);
+              new JsonWriter(jgen, result, currentMatch, currentPath, path, serializerProvider).write(name, val);
             }
           } catch(IllegalArgumentException | IllegalAccessException e) {
             e.printStackTrace();
@@ -364,16 +347,10 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     boolean annotatedWithIgnore(Field f) {
-      if(!hasJsonIgnoreCache.containsKey(f)) {
-        JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
-        JsonIgnoreProperties ignoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
-        if(hasJsonIgnoreCache.size() > cacheSize) {
-          hasJsonIgnoreCache.remove(hasJsonIgnoreCache.keySet().iterator().next());
-        }
-        hasJsonIgnoreCache.put(f, (jsonIgnore != null && jsonIgnore.value()) ||
-            (ignoreProperties != null && Arrays.asList(ignoreProperties.value()).contains(f.getName())));
-      }
-      return hasJsonIgnoreCache.get(f);
+      JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
+      JsonIgnoreProperties ignoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
+      return (jsonIgnore != null && jsonIgnore.value()) ||
+          (ignoreProperties != null && Arrays.asList(ignoreProperties.value()).contains(f.getName()));
     }
 
     @SuppressWarnings("unchecked")

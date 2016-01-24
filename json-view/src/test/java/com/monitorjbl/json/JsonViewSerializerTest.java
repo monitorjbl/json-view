@@ -622,7 +622,6 @@ public class JsonViewSerializerTest {
     String serialized = sut.writeValueAsString(JsonView.with(ref)
         .onClass(TestObject.class,
             match().exclude("*")
-                .include("listOfObjects")
                 .include("listOfObjects.otherVal")));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
