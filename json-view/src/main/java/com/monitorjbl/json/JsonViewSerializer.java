@@ -290,8 +290,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
           currentMatch = match;
         }
 
-        int included = containsMatchingPattern(match.getIncludes(), prefix + name);
-        int excluded = containsMatchingPattern(match.getExcludes(), prefix + name);
+        int included = containsMatchingPattern(match.getIncludes(), prefix + name, true);
+        int excluded = containsMatchingPattern(match.getExcludes(), prefix + name, false);
 
         /*
         The logic for this is a little complex. We're dealing with ternary logic to
@@ -327,10 +327,10 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
      * @param pattern
      * @return
      */
-    int containsMatchingPattern(List<String> values, String pattern) {
+    int containsMatchingPattern(List<String> values, String pattern, boolean matchPrefix) {
       for(String val : values) {
         String replaced = val.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*");
-        if(Pattern.compile(replaced).matcher(pattern).matches()) {
+        if(Pattern.compile(replaced).matcher(pattern).matches() || (matchPrefix && val.startsWith(pattern + "."))) {
           return replaced.contains("*") ? 0 : 1;
         }
       }

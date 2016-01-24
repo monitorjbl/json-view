@@ -47,42 +47,42 @@ public class WriterTest {
   @Test
   public void testContainsMatchingPattern_basic() {
     List<String> patterns = newArrayList("field1", "field2");
-    assertEquals(1, sut.containsMatchingPattern(patterns, "field1"));
-    assertEquals(1, sut.containsMatchingPattern(patterns, "field2"));
-    assertEquals(-1, sut.containsMatchingPattern(patterns, "field3"));
+    assertEquals(1, sut.containsMatchingPattern(patterns, "field1", true));
+    assertEquals(1, sut.containsMatchingPattern(patterns, "field2", true));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "field3", true));
   }
 
   @Test
   public void testContainsMatchingPattern_wildcard() {
     List<String> patterns = newArrayList("field*");
-    assertEquals(0, sut.containsMatchingPattern(patterns, "field1"));
-    assertEquals(0, sut.containsMatchingPattern(patterns, "field2"));
-    assertEquals(-1, sut.containsMatchingPattern(patterns, "val1"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field1", true));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field2", true));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "val1", true));
   }
 
   @Test
   public void testContainsMatchingPattern_wildcardAll() {
     List<String> patterns = newArrayList("*");
-    assertEquals(0, sut.containsMatchingPattern(patterns, "field1"));
-    assertEquals(0, sut.containsMatchingPattern(patterns, "field2"));
-    assertEquals(0, sut.containsMatchingPattern(patterns, "val1"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field1", true));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field2", true));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "val1", true));
   }
 
   @Test
   public void testContainsMatchingPattern_wildcardInChildPath() {
     List<String> patterns = newArrayList("*.green");
-    assertEquals(0, sut.containsMatchingPattern(patterns, "field1.green"));
-    assertEquals(-1, sut.containsMatchingPattern(patterns, "field2.blue"));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field1.green", true));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "field2.blue", true));
   }
 
   @Test
   public void testContainsMatchingPattern_wildcardInComplexPath() {
     List<String> patterns = newArrayList("*.green.*");
-    assertEquals(-1, sut.containsMatchingPattern(patterns, "field1.green"));
-    assertEquals(-1, sut.containsMatchingPattern(patterns, "field2.blue"));
-    assertEquals(0, sut.containsMatchingPattern(patterns, "field1.green.id"));
-    assertEquals(-1, sut.containsMatchingPattern(patterns, "field1.blue.id"));
-    assertEquals(0, sut.containsMatchingPattern(patterns, "field2.green.name"));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "field1.green", true));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "field2.blue", true));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field1.green.id", true));
+    assertEquals(-1, sut.containsMatchingPattern(patterns, "field1.blue.id", true));
+    assertEquals(0, sut.containsMatchingPattern(patterns, "field2.green.name", true));
   }
 
   @Test

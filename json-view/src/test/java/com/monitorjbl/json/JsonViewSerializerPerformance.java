@@ -15,7 +15,7 @@ import static com.google.common.collect.Lists.newArrayList;
 
 @Ignore
 public class JsonViewSerializerPerformance {
-    public static final int REPETITIONS = 1000000;
+    public static final int REPETITIONS = 100000000;
   ObjectMapper sut;
   ObjectMapper compare = new ObjectMapper();
 

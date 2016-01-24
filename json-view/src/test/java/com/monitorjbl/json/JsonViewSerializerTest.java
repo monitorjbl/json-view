@@ -264,7 +264,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-    ));
+                                       ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, match()
@@ -289,7 +289,7 @@ public class JsonViewSerializerTest {
     ref.setMapWithIntKeys(ImmutableMap.of(
         1, "red",
         2, "green"
-    ));
+                                         ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, match()
@@ -375,7 +375,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-    ));
+                                       ));
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
@@ -400,7 +400,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-    ));
+                                       ));
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
@@ -586,5 +586,52 @@ public class JsonViewSerializerTest {
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
     assertFalse(obj.containsKey("val"));
+  }
+
+  @Test
+  public void testImplicitInclude() throws Exception {
+    TestObject ref = new TestObject();
+    TestSubobject sub = new TestSubobject("test1");
+    sub.setOtherVal("otherVal1");
+    sub.setVal("asdf");
+    ref.setSub(sub);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref)
+        .onClass(TestObject.class, match()
+            .exclude("*")
+            .include("sub.otherVal")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("sub"));
+    Map m = (Map) obj.get("sub");
+    assertEquals(sub.getOtherVal(), m.get("otherVal"));
+    assertNull(m.get("val"));
+  }
+
+  @Test
+  public void testIncludesForList() throws Exception {
+    TestObject ref = new TestObject();
+    TestSubobject testSubobject1 = new TestSubobject("test1");
+    testSubobject1.setOtherVal("otherVal1");
+    testSubobject1.setVal("asdf");
+    TestSubobject testSubobject2 = new TestSubobject("test2");
+    testSubobject2.setOtherVal("otherVal2");
+    testSubobject2.setVal("asdf");
+    ref.setListOfObjects(Arrays.asList(testSubobject1, testSubobject2));
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref)
+        .onClass(TestObject.class,
+            match().exclude("*")
+                .include("listOfObjects")
+                .include("listOfObjects.otherVal")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("listOfObjects"));
+    List<Map<String, String>> list = (List<Map<String, String>>) obj.get("listOfObjects");
+    assertEquals(2, list.size());
+    assertNull(list.get(0).get("val"));
+    assertNull(list.get(1).get("val"));
+    assertNotNull(list.get(0).get("otherVal"));
+    assertNotNull(list.get(1).get("otherVal"));
   }
 }
