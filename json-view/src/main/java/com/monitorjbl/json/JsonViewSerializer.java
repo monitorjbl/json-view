@@ -253,11 +253,21 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         return false;
       }
 
-      //search for matcher
+      //search for matching class
       Match match = null;
       Class cls = declaringClass;
       while(!cls.equals(Object.class) && match == null) {
         match = result.getMatch(cls);
+
+        //search for any matching interfaces as well, stopping on the first one
+        if(match == null && cls.getInterfaces() != null) {
+          for(Class iface : cls.getInterfaces()) {
+            match = result.getMatch(iface);
+            if(match != null) {
+              break;
+            }
+          }
+        }
         cls = cls.getSuperclass();
       }
       if(match == null) {

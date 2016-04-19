@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Ints;
 import com.monitorjbl.json.model.TestChildObject;
+import com.monitorjbl.json.model.TestInterface;
 import com.monitorjbl.json.model.TestNonNulls;
 import com.monitorjbl.json.model.TestNulls;
 import com.monitorjbl.json.model.TestObject;
@@ -633,4 +634,20 @@ public class JsonViewSerializerTest {
     assertNotNull(list.get(0).get("otherVal"));
     assertNotNull(list.get(1).get("otherVal"));
   }
+
+//  @Test
+//  public void testMatchingOnInterfaces() throws Exception {
+//    TestObject ref = new TestObject();
+//    ref.setStr1("asdf");
+//    ref.setDate(new Date());
+//
+//    String serialized = sut.writeValueAsString(JsonView.with(ref)
+//        .onClass(TestInterface.class,
+//            match().exclude("date")));
+//    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+//
+//    assertNotNull(obj.get("str1"));
+//    assertEquals( ref.getStr1(),obj.get("str1"));
+//    assertNull(obj.get("date"));
+//  }
 }

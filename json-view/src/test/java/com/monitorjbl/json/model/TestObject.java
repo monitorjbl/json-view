@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 @JsonIgnoreProperties({"ignoredIndirect"})
-public class TestObject {
-  public static enum TestEnum {VALUE_A, VALUE_B}
+public class TestObject implements TestInterface {
+  public enum TestEnum {VALUE_A, VALUE_B}
 
   public static final String PUBLIC_FIELD = "public";
   private static final String PRIVATE_FIELD = "private";
