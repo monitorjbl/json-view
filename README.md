@@ -282,7 +282,7 @@ public class JsonController {
 
   @RequestMapping(method = RequestMethod.GET, value = "/bean")
   @ResponseBody
-  public void getTestObject() {
+  public List<TestObject> getTestObject() {
     List<TestObject> list = service.list();
 
     return json.use(JsonView.with(list)
