@@ -16,8 +16,11 @@ While the declarative style certainly has many benefits (compile-time checking, 
     * [Wildcard matchers](#wildcard-matchers)
     * [Class matchers](#class-matchers)
 * [Spring Integration](#spring-integration)
-  * [Usage](#usage-1)
   * [Including](#including-1)
+  * [Configuration](#configuration)
+  * [Usage](#usage-1)
+  * [Return value](#return-value)
+* [Building from source](#building-from-source)
 
 # JsonView
 
