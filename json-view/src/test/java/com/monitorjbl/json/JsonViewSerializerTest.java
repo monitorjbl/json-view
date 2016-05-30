@@ -8,7 +8,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Ints;
 import com.monitorjbl.json.model.TestChildObject;
-import com.monitorjbl.json.model.TestInterface;
 import com.monitorjbl.json.model.TestNonNulls;
 import com.monitorjbl.json.model.TestNulls;
 import com.monitorjbl.json.model.TestObject;
@@ -650,4 +649,25 @@ public class JsonViewSerializerTest {
 //    assertEquals( ref.getStr1(),obj.get("str1"));
 //    assertNull(obj.get("date"));
 //  }
+
+
+  @Test
+  public void testIgnorePropertiesOnField() throws Exception {
+    TestObject ref = new TestObject();
+    TestSubobject testSubobject1 = new TestSubobject("test1");
+    testSubobject1.setOtherVal("otherVal1");
+    testSubobject1.setVal("asdf");
+    ref.setSub(testSubobject1);
+    ref.setSubWithIgnores(testSubobject1);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref)
+        .onClass(TestObject.class,
+            match().exclude("sub")));
+    Map<String, Map<String, Object>> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNull(obj.get("sub"));
+    assertNotNull(obj.get("subWithIgnores"));
+    assertNotNull(obj.get("subWithIgnores").get("otherVal"));
+    assertNull(obj.get("subWithIgnores").get("val"));
+  }
 }

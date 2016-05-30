@@ -37,6 +37,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     Stack<String> path = new Stack<>();
     String currentPath = "";
     Match currentMatch = null;
+    Field referringField = null;
 
     final SerializerProvider serializerProvider;
     final JsonGenerator jgen;
@@ -57,11 +58,12 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     private JsonWriter(JsonGenerator jgen, JsonView result, Match currentMatch,
-                       String currentPath, Stack<String> path, SerializerProvider serializerProvider) {
+                       String currentPath, Stack<String> path, Field referringField, SerializerProvider serializerProvider) {
       this.jgen = jgen;
       this.result = result;
       this.currentMatch = currentMatch;
       this.currentPath = currentPath;
+      this.referringField = referringField;
       this.path = path;
       this.serializerProvider = serializerProvider;
     }
@@ -134,7 +136,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
         jgen.writeStartArray();
         for(Object o : iter) {
-          new JsonWriter(jgen, result, currentMatch, currentPath, path, serializerProvider).write(null, o);
+          new JsonWriter(jgen, result, currentMatch, currentPath, path, referringField, serializerProvider).write(null, o);
         }
         jgen.writeEndArray();
       } else {
@@ -225,7 +227,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             if(valueAllowed(val, obj.getClass()) && fieldAllowed(field, obj.getClass())) {
               String name = field.getName();
               jgen.writeFieldName(name);
-              new JsonWriter(jgen, result, currentMatch, currentPath, path, serializerProvider).write(name, val);
+              new JsonWriter(jgen, result, currentMatch, currentPath, path, field, serializerProvider).write(name, val);
             }
           } catch(IllegalArgumentException | IllegalAccessException e) {
             e.printStackTrace();
@@ -358,9 +360,15 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
     boolean annotatedWithIgnore(Field f) {
       JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
-      JsonIgnoreProperties ignoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
+      JsonIgnoreProperties classIgnoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
+      JsonIgnoreProperties fieldIgnoreProperties = null;
+      if(referringField != null) {
+        fieldIgnoreProperties = referringField.getAnnotation(JsonIgnoreProperties.class);
+      }
+
       return (jsonIgnore != null && jsonIgnore.value()) ||
-          (ignoreProperties != null && Arrays.asList(ignoreProperties.value()).contains(f.getName()));
+          (classIgnoreProperties != null && Arrays.asList(classIgnoreProperties.value()).contains(f.getName())) ||
+          (fieldIgnoreProperties != null && Arrays.asList(fieldIgnoreProperties.value()).contains(f.getName()));
     }
 
     @SuppressWarnings("unchecked")

@@ -17,6 +17,8 @@ public class TestObject implements TestInterface {
   private static final String PRIVATE_FIELD = "private";
 
   private TestSubobject sub;
+  @JsonIgnoreProperties({"val"})
+  private TestSubobject subWithIgnores;
   private String str1;
   private String str2;
   @JsonIgnore
@@ -196,5 +198,13 @@ public class TestObject implements TestInterface {
 
   public void setCls(Class cls) {
     this.cls = cls;
+  }
+
+  public TestSubobject getSubWithIgnores() {
+    return subWithIgnores;
+  }
+
+  public void setSubWithIgnores(TestSubobject subWithIgnores) {
+    this.subWithIgnores = subWithIgnores;
   }
 }
