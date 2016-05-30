@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.monitorjbl.json.server.ConfigServer;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.fluent.Request;
-import org.apache.http.client.fluent.Response;
 import org.apache.http.entity.ContentType;
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -23,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public abstract class ConfigTest {
@@ -123,6 +123,16 @@ public abstract class ConfigTest {
         .execute().returnContent().asString();
     System.out.println(ret);
     assertEquals(5, ret.split("\n").length);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testCircularDependency() throws Exception {
+    String ret = Request.Get("http://localhost:8080/circularReference").execute().returnContent().asString();
+    Map<String, Object> map = new ObjectMapper().readValue(ret, HashMap.class);
+    assertNotNull(map.get("val"));
+    assertEquals("parent", map.get("val"));
+    assertNull(map.get("subs"));
   }
 
   @Test

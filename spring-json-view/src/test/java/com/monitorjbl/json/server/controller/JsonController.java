@@ -16,9 +16,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Arrays.asList;
 
 @Controller
 public class JsonController {
@@ -44,7 +45,7 @@ public class JsonController {
     obj.setInt1(1);
     obj.setIgnoredDirect("ignored");
     obj.setStr2("asdf");
-    obj.setList(Arrays.asList("red", "blue", "green"));
+    obj.setList(asList("red", "blue", "green"));
     obj.setSub(new TestSubobject("qwerqwerqwerqw"));
 
     json.use(JsonView.with(obj)
@@ -60,7 +61,7 @@ public class JsonController {
     obj.setInt1(1);
     obj.setIgnoredDirect("ignored");
     obj.setStr2("asdf");
-    obj.setList(Arrays.asList("red", "blue", "green"));
+    obj.setList(asList("red", "blue", "green"));
     obj.setSub(new TestSubobject("qwerqwerqwerqw"));
 
     return json.use(JsonView.with(obj)
@@ -109,6 +110,26 @@ public class JsonController {
     return ImmutableMap.of(
         "red", "herring",
         "blue", "fish");
+  }
+
+  @RequestMapping(method = RequestMethod.GET, value = "/circularReference")
+  @ResponseBody
+  public ResponseEntity<TestSubobject> circular() {
+    TestSubobject parent = new TestSubobject();
+    TestSubobject child = new TestSubobject();
+
+    child.setVal("child");
+    child.setSubs(asList(parent));
+
+    parent.setVal("parent");
+    parent.setSubs(asList(child));
+
+    parent = json.use(JsonView.with(parent)
+        .onClass(TestSubobject.class, Match.match()
+            .exclude("subs")))
+        .returnValue();
+
+    return ResponseEntity.ok(parent);
   }
 
   @RequestMapping(method = RequestMethod.GET, value = "/responseEntity")
