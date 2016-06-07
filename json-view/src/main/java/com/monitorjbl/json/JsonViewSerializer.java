@@ -1,8 +1,10 @@
 package com.monitorjbl.json;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -244,7 +246,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
           || (serializerProvider.getConfig() != null
           && serializerProvider.getConfig().getSerializationInclusion() == Include.ALWAYS
           && cls.getAnnotation(JsonSerialize.class) == null)
-          || (cls.getAnnotation(JsonSerialize.class) != null && readClassAnnotation(cls, JsonSerialize.class, "include") == Inclusion.ALWAYS);
+          || (cls.getAnnotation(JsonSerialize.class) != null
+          && readClassAnnotation(cls, JsonSerialize.class, "include") == Inclusion.ALWAYS);
     }
 
     @SuppressWarnings("unchecked")
@@ -362,13 +365,28 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
       JsonIgnoreProperties classIgnoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
       JsonIgnoreProperties fieldIgnoreProperties = null;
+      boolean backReferenced = false;
+
+      //make sure the referring field didn't specify properties to ignore
       if(referringField != null) {
         fieldIgnoreProperties = referringField.getAnnotation(JsonIgnoreProperties.class);
       }
 
+      //make sure the referring field didn't specify a backreference annotation
+      if(f.getAnnotation(JsonBackReference.class) != null && referringField != null) {
+        for(Field lastField : referringField.getDeclaringClass().getDeclaredFields()) {
+          JsonManagedReference fieldManagedReference = lastField.getAnnotation(JsonManagedReference.class);
+          if(fieldManagedReference != null && lastField.getType().equals(f.getDeclaringClass())) {
+            backReferenced = true;
+            break;
+          }
+        }
+      }
+
       return (jsonIgnore != null && jsonIgnore.value()) ||
           (classIgnoreProperties != null && Arrays.asList(classIgnoreProperties.value()).contains(f.getName())) ||
-          (fieldIgnoreProperties != null && Arrays.asList(fieldIgnoreProperties.value()).contains(f.getName()));
+          (fieldIgnoreProperties != null && Arrays.asList(fieldIgnoreProperties.value()).contains(f.getName())) ||
+          backReferenced;
     }
 
     @SuppressWarnings("unchecked")

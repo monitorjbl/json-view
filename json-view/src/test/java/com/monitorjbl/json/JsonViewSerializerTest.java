@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Ints;
+import com.monitorjbl.json.model.TestBackreferenceObject;
+import com.monitorjbl.json.model.TestBackreferenceObject.TestForwardReferenceObject;
 import com.monitorjbl.json.model.TestChildObject;
 import com.monitorjbl.json.model.TestNonNulls;
 import com.monitorjbl.json.model.TestNulls;
@@ -669,5 +671,21 @@ public class JsonViewSerializerTest {
     assertNotNull(obj.get("subWithIgnores"));
     assertNotNull(obj.get("subWithIgnores").get("otherVal"));
     assertNull(obj.get("subWithIgnores").get("val"));
+  }
+
+  @Test
+  public void testBackReferenceSupport() throws Exception {
+    TestForwardReferenceObject forward = new TestForwardReferenceObject();
+    TestBackreferenceObject back = new TestBackreferenceObject();
+
+    forward.setId("forward");
+    forward.setParent(back);
+    back.setId("back");
+    back.setChildren(asList(forward));
+
+    String serialized = sut.writeValueAsString(JsonView.with(forward));
+    Map<String, Map<String, Object>> obj = sut.readValue(serialized, HashMap.class);
+
+    System.out.println(obj);
   }
 }
