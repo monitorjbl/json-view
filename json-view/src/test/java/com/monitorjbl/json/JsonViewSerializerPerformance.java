@@ -42,7 +42,7 @@ public class JsonViewSerializerPerformance {
       }
     }
 
-    System.out.println(times / (REPETITIONS - 100));
+    //System.out.println(times / (REPETITIONS - 100));
   }
 
   @Test
@@ -60,7 +60,7 @@ public class JsonViewSerializerPerformance {
       }
     }
 
-    System.out.println(times / (REPETITIONS - 100));
+    //System.out.println(times / (REPETITIONS - 100));
   }
 
   TestObject testObject() {

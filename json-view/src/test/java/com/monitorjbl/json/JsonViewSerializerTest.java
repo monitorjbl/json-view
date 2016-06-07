@@ -20,6 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -563,7 +564,6 @@ public class JsonViewSerializerTest {
     String serialized = sut.writeValueAsString(JsonView.with(ref));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
-    System.out.println(serialized);
     assertFalse(obj.containsKey("str2"));
   }
 
@@ -686,6 +686,19 @@ public class JsonViewSerializerTest {
     String serialized = sut.writeValueAsString(JsonView.with(forward));
     Map<String, Map<String, Object>> obj = sut.readValue(serialized, HashMap.class);
 
-    System.out.println(obj);
+    assertNotNull(obj.get("parent"));
+    assertEquals("back", obj.get("parent").get("id"));
+  }
+
+  @Test
+  public void testBigDecimalSerialization() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setBigDecimal(new BigDecimal(Math.PI));
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("bigDecimal"));
+    assertEquals(3.141592653589793, obj.get("bigDecimal"));
   }
 }

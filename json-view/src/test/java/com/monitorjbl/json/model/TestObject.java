@@ -3,6 +3,7 @@ package com.monitorjbl.json.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URL;
 import java.util.Date;
@@ -39,6 +40,7 @@ public class TestObject implements TestInterface {
   private URL url;
   private URI uri;
   private Class cls;
+  private BigDecimal bigDecimal;
 
   public String getStr1() {
     return str1;
@@ -206,5 +208,13 @@ public class TestObject implements TestInterface {
 
   public void setSubWithIgnores(TestSubobject subWithIgnores) {
     this.subWithIgnores = subWithIgnores;
+  }
+
+  public BigDecimal getBigDecimal() {
+    return bigDecimal;
+  }
+
+  public void setBigDecimal(BigDecimal bigDecimal) {
+    this.bigDecimal = bigDecimal;
   }
 }

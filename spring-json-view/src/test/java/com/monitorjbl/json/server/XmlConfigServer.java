@@ -25,7 +25,7 @@ public class XmlConfigServer implements ConfigServer {
           Server server = new Server(port);
 
           final XmlWebApplicationContext xmlBasedContext = new XmlWebApplicationContext();
-          System.out.println(xmlBasedContext.getEnvironment().getClass());
+          //System.out.println(xmlBasedContext.getEnvironment().getClass());
           xmlBasedContext.setConfigLocation("classpath:context.xml");
 
           final ServletHolder servletHolder = new ServletHolder(new DispatcherServlet(xmlBasedContext));

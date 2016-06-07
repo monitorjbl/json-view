@@ -121,7 +121,6 @@ public abstract class ConfigTest {
     String ret = Request.Post("http://localhost:8080/bean").bodyString(
         "{\"date\":\"1433214360187\",\"str1\":\"test\",\"notReal\":\"asdfas\"}", ContentType.APPLICATION_JSON)
         .execute().returnContent().asString();
-    System.out.println(ret);
     assertEquals(5, ret.split("\n").length);
   }
 

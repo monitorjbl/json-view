@@ -17,6 +17,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -91,6 +92,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         jgen.writeBoolean((Boolean) obj);
       } else if(obj == null) {
         jgen.writeNull();
+      } else if(obj instanceof BigDecimal) {
+        jgen.writeNumber((BigDecimal) obj);
       } else {
         return false;
       }
