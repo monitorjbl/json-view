@@ -10,14 +10,30 @@ import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 import static com.google.common.collect.Lists.newArrayList;
 
-@Ignore
+@RunWith(Parameterized.class)
 public class JsonViewSerializerPerformance {
-    public static final int REPETITIONS = 100000000;
+  private int REPETITIONS ;
   ObjectMapper sut;
   ObjectMapper compare = new ObjectMapper();
+
+  @Parameterized.Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(new Object[][] {
+            { 101 },{ 1000 },{ 10000 }, { 100000 },{ 1000000 },{ 10000000 },{ 100000000 }
+    });
+  }
+
+  public JsonViewSerializerPerformance( int REPETITIONS ) {
+    this.REPETITIONS = REPETITIONS;
+  }
 
   @Before
   public void setup() {
