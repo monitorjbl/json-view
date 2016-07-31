@@ -41,7 +41,7 @@ public class WriterTest {
   public void setup() {
     MockitoAnnotations.initMocks(this);
     serializerProvider = PowerMockito.mock(SerializerProvider.class);
-    sut = new JsonWriter(serializerProvider, jgen, result);
+    sut = new JsonViewSerializer().new JsonWriter(serializerProvider, jgen, result);
   }
 
   @Test

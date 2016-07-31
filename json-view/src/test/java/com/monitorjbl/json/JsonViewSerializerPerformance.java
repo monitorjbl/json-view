@@ -8,7 +8,6 @@ import com.monitorjbl.json.model.TestSubobject;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -20,18 +19,18 @@ import static com.google.common.collect.Lists.newArrayList;
 
 @RunWith(Parameterized.class)
 public class JsonViewSerializerPerformance {
-  private int REPETITIONS ;
+  private int REPETITIONS;
   ObjectMapper sut;
   ObjectMapper compare = new ObjectMapper();
 
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
-    return Arrays.asList(new Object[][] {
-            { 101 },{ 1000 },{ 10000 }, { 100000 },{ 1000000 },{ 10000000 },{ 100000000 }
+    return Arrays.asList(new Object[][]{
+        {101}, {1000}, {10000}, {100000}, {1000000}
     });
   }
 
-  public JsonViewSerializerPerformance( int REPETITIONS ) {
+  public JsonViewSerializerPerformance(int REPETITIONS) {
     this.REPETITIONS = REPETITIONS;
   }
 
@@ -47,13 +46,13 @@ public class JsonViewSerializerPerformance {
   @SuppressWarnings("unchecked")
   public void sutRandomSingleObjectPerformance() throws Exception {
     long times = 0;
-    for (int i = 0; i < REPETITIONS; i++) {
+    for(int i = 0; i < REPETITIONS; i++) {
       TestObject ref = testObject();
 
       long time = System.nanoTime();
       String serialized = sut.writeValueAsString(JsonView.with(ref));
       time = System.nanoTime() - time;
-      if (i > 100) {
+      if(i > 100) {
         times += time;
       }
     }
@@ -65,13 +64,13 @@ public class JsonViewSerializerPerformance {
   @SuppressWarnings("unchecked")
   public void compareRandomSingleObjectPerformance() throws Exception {
     long times = 0;
-    for (int i = 0; i < REPETITIONS; i++) {
+    for(int i = 0; i < REPETITIONS; i++) {
       TestObject ref = testObject();
 
       long time = System.nanoTime();
       String serialized = compare.writeValueAsString(ref);
       time = System.nanoTime() - time;
-      if (i > 100) {
+      if(i > 100) {
         times += time;
       }
     }

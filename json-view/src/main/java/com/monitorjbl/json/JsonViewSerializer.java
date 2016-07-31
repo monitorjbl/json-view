@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,12 +32,92 @@ import java.util.regex.Pattern;
 
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
+  private final int maxCacheSize;
+  private final Map<Class, Class<?>[]> interfaceCache = new HashMap<>();
+  private final Map<Class, Annotation[]> classAnnotationCache = new HashMap<>();
+  private final Map<Class, Field[]> classFieldsCache = new HashMap<>();
+  private final Map<Field, Annotation[]> fieldAnnotationCache = new HashMap<>();
+
+  public JsonViewSerializer() {
+    this(1024);
+  }
+
+  public JsonViewSerializer(int maxCacheSize) {
+    this.maxCacheSize = maxCacheSize;
+  }
+
   @Override
   public void serialize(JsonView result, JsonGenerator jgen, SerializerProvider serializers) throws IOException {
     new JsonWriter(serializers, jgen, result).write(null, result.getValue());
   }
 
-  static class JsonWriter {
+  private Class<?>[] getInterfaces(Class cls) {
+    if(!interfaceCache.containsKey(cls)) {
+      fitToMaxSize(interfaceCache).put(cls, cls.getInterfaces());
+    }
+    return interfaceCache.get(cls);
+  }
+
+  private Field[] getDeclaredFields(Class cls) {
+    if(!classFieldsCache.containsKey(cls)) {
+      fitToMaxSize(classFieldsCache).put(cls, cls.getDeclaredFields());
+    }
+
+    return classFieldsCache.get(cls);
+  }
+
+  private Annotation[] getAnnotations(Class cls) {
+    if(!classAnnotationCache.containsKey(cls)) {
+      fitToMaxSize(classAnnotationCache).put(cls, cls.getAnnotations());
+    }
+
+    return classAnnotationCache.get(cls);
+  }
+
+  private Annotation[] getAnnotations(Field field) {
+    if(!fieldAnnotationCache.containsKey(field)) {
+      fitToMaxSize(fieldAnnotationCache).put(field, field.getAnnotations());
+    }
+
+    return fieldAnnotationCache.get(field);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T extends Annotation> T getAnnotation(Class cls, Class<T> annotation) {
+    Annotation[] annotations = getAnnotations(cls);
+    if(annotations != null) {
+      for(Annotation a : annotations) {
+        if(a.annotationType().equals(annotation)) {
+          return (T) a;
+        }
+      }
+    }
+    return null;
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T extends Annotation> T getAnnotation(Field field, Class<T> annotation) {
+    Annotation[] annotations = getAnnotations(field);
+    if(annotations != null) {
+      for(Annotation a : annotations) {
+        if(a.annotationType().equals(annotation)) {
+          return (T) a;
+        }
+      }
+    }
+    return null;
+  }
+
+  private <T, V> Map<T, V> fitToMaxSize(Map<T, V> map) {
+    synchronized (map) {
+      if(map.size() > maxCacheSize) {
+        map.remove(map.keySet().iterator().next());
+      }
+    }
+    return map;
+  }
+
+  class JsonWriter {
     Stack<String> path = new Stack<>();
     String currentPath = "";
     Match currentMatch = null;
@@ -223,7 +304,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
       Class cls = obj.getClass();
       while(!cls.equals(Object.class)) {
-        Field[] fields = cls.getDeclaredFields();
+        Field[] fields = getDeclaredFields(cls);
         for(Field field : fields) {
           try {
             field.setAccessible(true);
@@ -248,8 +329,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       return value != null
           || (serializerProvider.getConfig() != null
           && serializerProvider.getConfig().getSerializationInclusion() == Include.ALWAYS
-          && cls.getAnnotation(JsonSerialize.class) == null)
-          || (cls.getAnnotation(JsonSerialize.class) != null
+          && getAnnotation(cls, JsonSerialize.class) == null)
+          || (getAnnotation(cls, JsonSerialize.class) != null
           && readClassAnnotation(cls, JsonSerialize.class, "include") == Inclusion.ALWAYS);
     }
 
@@ -268,8 +349,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         match = result.getMatch(cls);
 
         //search for any matching interfaces as well, stopping on the first one
-        if(match == null && cls.getInterfaces() != null) {
-          for(Class iface : cls.getInterfaces()) {
+        if(match == null && getInterfaces(cls) != null) {
+          for(Class iface : getInterfaces(cls)) {
             match = result.getMatch(iface);
             if(match != null) {
               break;
@@ -365,20 +446,20 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     boolean annotatedWithIgnore(Field f) {
-      JsonIgnore jsonIgnore = f.getAnnotation(JsonIgnore.class);
-      JsonIgnoreProperties classIgnoreProperties = f.getDeclaringClass().getAnnotation(JsonIgnoreProperties.class);
+      JsonIgnore jsonIgnore = getAnnotation(f, JsonIgnore.class);
+      JsonIgnoreProperties classIgnoreProperties = getAnnotation(f.getDeclaringClass(), JsonIgnoreProperties.class);
       JsonIgnoreProperties fieldIgnoreProperties = null;
       boolean backReferenced = false;
 
       //make sure the referring field didn't specify properties to ignore
       if(referringField != null) {
-        fieldIgnoreProperties = referringField.getAnnotation(JsonIgnoreProperties.class);
+        fieldIgnoreProperties = getAnnotation(referringField, JsonIgnoreProperties.class);
       }
 
       //make sure the referring field didn't specify a backreference annotation
-      if(f.getAnnotation(JsonBackReference.class) != null && referringField != null) {
-        for(Field lastField : referringField.getDeclaringClass().getDeclaredFields()) {
-          JsonManagedReference fieldManagedReference = lastField.getAnnotation(JsonManagedReference.class);
+      if(getAnnotation(f, JsonBackReference.class) != null && referringField != null) {
+        for(Field lastField : getDeclaredFields(referringField.getDeclaringClass())) {
+          JsonManagedReference fieldManagedReference = getAnnotation(lastField, JsonManagedReference.class);
           if(fieldManagedReference != null && lastField.getType().equals(f.getDeclaringClass())) {
             backReferenced = true;
             break;
@@ -395,7 +476,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     @SuppressWarnings("unchecked")
     <E> E readClassAnnotation(Class cls, Class annotationType, String methodName) {
       try {
-        for(Annotation an : cls.getAnnotations()) {
+        for(Annotation an : getAnnotations(cls)) {
           Class<? extends Annotation> type = an.annotationType();
           if(an.annotationType().equals(annotationType)) {
             for(Method method : type.getDeclaredMethods()) {
@@ -412,4 +493,6 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       }
     }
   }
+
+
 }
