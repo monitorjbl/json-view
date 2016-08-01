@@ -16,66 +16,74 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static com.monitorjbl.json.Match.match;
 
 @RunWith(Parameterized.class)
-public class JsonViewSerializerPerformance {
-  private int REPETITIONS;
-  ObjectMapper sut;
-  ObjectMapper compare = new ObjectMapper();
+public class JsonViewSerializerPerformanceTest {
+  private int repetitions;
+  private JsonViewSerializer serializer = new JsonViewSerializer();
+  private ObjectMapper sut;
+  private ObjectMapper compare = new ObjectMapper();
 
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(new Object[][]{
-        {101}, {1000}, {10000}, {100000}, {1000000}
+        {500}, {1000}, {10000}, {100000}, {1000000}
     });
   }
 
-  public JsonViewSerializerPerformance(int REPETITIONS) {
-    this.REPETITIONS = REPETITIONS;
+  public JsonViewSerializerPerformanceTest(int repetitions) {
+    this.repetitions = repetitions;
   }
 
   @Before
   public void setup() {
     sut = new ObjectMapper();
     SimpleModule module = new SimpleModule();
-    module.addSerializer(JsonView.class, new JsonViewSerializer());
+    module.addSerializer(JsonView.class, serializer);
     sut.registerModule(module);
   }
 
   @Test
-  @SuppressWarnings("unchecked")
-  public void sutRandomSingleObjectPerformance() throws Exception {
-    long times = 0;
-    for(int i = 0; i < REPETITIONS; i++) {
-      TestObject ref = testObject();
+  public void comparePerformance() throws Exception {
+    long baselineTimes = baselineRandomSingleObjectPerformance();
+    long jsonViewTimes = jsonViewRandomSingleObjectPerformance();
+    long difference = (long) (((double) jsonViewTimes) / (double) baselineTimes) * 100L;
 
-      long time = System.nanoTime();
-      String serialized = sut.writeValueAsString(JsonView.with(ref));
-      time = System.nanoTime() - time;
-      if(i > 100) {
-        times += time;
-      }
-    }
-
-    //System.out.println(times / (REPETITIONS - 100));
+    System.out.printf("[%-8s]: | Baseline: %-8s | JsonView: %-8s | Difference: %-6s |\n",
+        repetitions, (baselineTimes / 1000000) + "ms", (jsonViewTimes / 1000000) + "ms", difference + "%");
   }
 
-  @Test
-  @SuppressWarnings("unchecked")
-  public void compareRandomSingleObjectPerformance() throws Exception {
+  public long jsonViewRandomSingleObjectPerformance() throws Exception {
     long times = 0;
-    for(int i = 0; i < REPETITIONS; i++) {
+    for(int i = 0; i < repetitions; i++) {
       TestObject ref = testObject();
 
       long time = System.nanoTime();
-      String serialized = compare.writeValueAsString(ref);
+      sut.writeValueAsString(JsonView.with(ref).onClass(TestObject.class, match()
+          .exclude("int1")));
       time = System.nanoTime() - time;
       if(i > 100) {
         times += time;
       }
     }
 
-    //System.out.println(times / (REPETITIONS - 100));
+    return times;
+  }
+
+  public long baselineRandomSingleObjectPerformance() throws Exception {
+    long times = 0;
+    for(int i = 0; i < repetitions; i++) {
+      TestObject ref = testObject();
+
+      long time = System.nanoTime();
+      compare.writeValueAsString(ref);
+      time = System.nanoTime() - time;
+      if(i > 100) {
+        times += time;
+      }
+    }
+    return times;
   }
 
   TestObject testObject() {

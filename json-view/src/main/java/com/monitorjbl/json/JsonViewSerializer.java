@@ -37,6 +37,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
   private final Map<Class, Annotation[]> classAnnotationCache = new HashMap<>();
   private final Map<Class, Field[]> classFieldsCache = new HashMap<>();
   private final Map<Field, Annotation[]> fieldAnnotationCache = new HashMap<>();
+  private final Map<List<String>, Map<String, Map<Boolean, Integer>>> matchingCache = new HashMap<>();
+  private final Map<Field, Boolean> annotatedWithIgnoreCache = new HashMap<>();
 
   /**
    * Map of custom serializers to take into account when serializing fields.
@@ -88,72 +90,6 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
   @Override
   public void serialize(JsonView result, JsonGenerator jgen, SerializerProvider serializers) throws IOException {
     new JsonWriter(serializers, jgen, result).write(null, result.getValue());
-  }
-
-  private Class<?>[] getInterfaces(Class cls) {
-    if(!interfaceCache.containsKey(cls)) {
-      fitToMaxSize(interfaceCache).put(cls, cls.getInterfaces());
-    }
-    return interfaceCache.get(cls);
-  }
-
-  private Field[] getDeclaredFields(Class cls) {
-    if(!classFieldsCache.containsKey(cls)) {
-      fitToMaxSize(classFieldsCache).put(cls, cls.getDeclaredFields());
-    }
-
-    return classFieldsCache.get(cls);
-  }
-
-  private Annotation[] getAnnotations(Class cls) {
-    if(!classAnnotationCache.containsKey(cls)) {
-      fitToMaxSize(classAnnotationCache).put(cls, cls.getAnnotations());
-    }
-
-    return classAnnotationCache.get(cls);
-  }
-
-  private Annotation[] getAnnotations(Field field) {
-    if(!fieldAnnotationCache.containsKey(field)) {
-      fitToMaxSize(fieldAnnotationCache).put(field, field.getAnnotations());
-    }
-
-    return fieldAnnotationCache.get(field);
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T extends Annotation> T getAnnotation(Class cls, Class<T> annotation) {
-    Annotation[] annotations = getAnnotations(cls);
-    if(annotations != null) {
-      for(Annotation a : annotations) {
-        if(a.annotationType().equals(annotation)) {
-          return (T) a;
-        }
-      }
-    }
-    return null;
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T extends Annotation> T getAnnotation(Field field, Class<T> annotation) {
-    Annotation[] annotations = getAnnotations(field);
-    if(annotations != null) {
-      for(Annotation a : annotations) {
-        if(a.annotationType().equals(annotation)) {
-          return (T) a;
-        }
-      }
-    }
-    return null;
-  }
-
-  private <T, V> Map<T, V> fitToMaxSize(Map<T, V> map) {
-    synchronized (map) {
-      if(map.size() > maxCacheSize) {
-        map.remove(map.keySet().iterator().next());
-      }
-    }
-    return map;
   }
 
   class JsonWriter {
@@ -446,28 +382,6 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       }
     }
 
-    /**
-     * Returns one of the following values:
-     * <pre>
-     * -1: No match found
-     *  0: Wildcard-based match
-     *  1: Non-wildcard match
-     * </pre>
-     *
-     * @param values
-     * @param pattern
-     * @return
-     */
-    int containsMatchingPattern(List<String> values, String pattern, boolean matchPrefix) {
-      for(String val : values) {
-        String replaced = val.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*");
-        if(Pattern.compile(replaced).matcher(pattern).matches() || (matchPrefix && val.startsWith(pattern + "."))) {
-          return replaced.contains("*") ? 0 : 1;
-        }
-      }
-      return -1;
-    }
-
     void write(String fieldName, Object value) throws IOException {
       if(fieldName != null) {
         path.push(fieldName);
@@ -494,34 +408,6 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       currentPath = builder.length() > 0 ? builder.toString().substring(1) : "";
     }
 
-    boolean annotatedWithIgnore(Field f) {
-      JsonIgnore jsonIgnore = getAnnotation(f, JsonIgnore.class);
-      JsonIgnoreProperties classIgnoreProperties = getAnnotation(f.getDeclaringClass(), JsonIgnoreProperties.class);
-      JsonIgnoreProperties fieldIgnoreProperties = null;
-      boolean backReferenced = false;
-
-      //make sure the referring field didn't specify properties to ignore
-      if(referringField != null) {
-        fieldIgnoreProperties = getAnnotation(referringField, JsonIgnoreProperties.class);
-      }
-
-      //make sure the referring field didn't specify a backreference annotation
-      if(getAnnotation(f, JsonBackReference.class) != null && referringField != null) {
-        for(Field lastField : getDeclaredFields(referringField.getDeclaringClass())) {
-          JsonManagedReference fieldManagedReference = getAnnotation(lastField, JsonManagedReference.class);
-          if(fieldManagedReference != null && lastField.getType().equals(f.getDeclaringClass())) {
-            backReferenced = true;
-            break;
-          }
-        }
-      }
-
-      return (jsonIgnore != null && jsonIgnore.value()) ||
-          (classIgnoreProperties != null && Arrays.asList(classIgnoreProperties.value()).contains(f.getName())) ||
-          (fieldIgnoreProperties != null && Arrays.asList(fieldIgnoreProperties.value()).contains(f.getName())) ||
-          backReferenced;
-    }
-
     @SuppressWarnings("unchecked")
     <E> E readClassAnnotation(Class cls, Class annotationType, String methodName) {
       try {
@@ -541,7 +427,163 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         throw new RuntimeException(e);
       }
     }
+
+    /**
+     * Returns one of the following values:
+     * <pre>
+     * -1: No match found
+     *  0: Wildcard-based match
+     *  1: Non-wildcard match
+     * </pre>
+     * <p>
+     * This method is memoized to speed up execution time
+     *
+     * @param values
+     * @param pattern
+     * @return
+     */
+    int containsMatchingPattern(List<String> values, String pattern, boolean matchPrefix) {
+      Map<String, Map<Boolean, Integer>> l1 = matchingCache.get(values);
+      Map<Boolean, Integer> l2 = l1 == null ? null : l1.get(pattern);
+      if(l1 != null && l2 != null) {
+        return l2.get(matchPrefix);
+      } else {
+        int match = -1;
+        for(String val : values) {
+          String replaced = val.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*");
+          if(Pattern.compile(replaced).matcher(pattern).matches() || (matchPrefix && val.startsWith(pattern + "."))) {
+            match = replaced.contains("*") ? 0 : 1;
+            break;
+          }
+        }
+
+        //save result to avoid having to do an expensive regex check every time
+        synchronized (matchingCache) {
+          Map<String, Map<Boolean, Integer>> first = matchingCache.containsKey(values) ? matchingCache.get(values) : new HashMap<String, Map<Boolean, Integer>>();
+          Map<Boolean, Integer> second = first.containsKey(pattern) ? first.get(pattern) : new HashMap<Boolean, Integer>();
+
+          second.put(matchPrefix, match);
+          first.put(pattern, second);
+          matchingCache.put(values, first);
+        }
+
+        return match;
+      }
+    }
+
+    /**
+     * Returns a boolean indicating whether the provided field is annotated with
+     * some form of ignore. This method is memoized to speed up execution time
+     *
+     * @param f
+     * @return
+     */
+    boolean annotatedWithIgnore(Field f) {
+      boolean annotated;
+      if(!annotatedWithIgnoreCache.containsKey(f)) {
+        JsonIgnore jsonIgnore = getAnnotation(f, JsonIgnore.class);
+        JsonIgnoreProperties classIgnoreProperties = getAnnotation(f.getDeclaringClass(), JsonIgnoreProperties.class);
+        JsonIgnoreProperties fieldIgnoreProperties = null;
+        boolean backReferenced = false;
+
+        //make sure the referring field didn't specify properties to ignore
+        if(referringField != null) {
+          fieldIgnoreProperties = getAnnotation(referringField, JsonIgnoreProperties.class);
+        }
+
+        //make sure the referring field didn't specify a backreference annotation
+        if(getAnnotation(f, JsonBackReference.class) != null && referringField != null) {
+          for(Field lastField : getDeclaredFields(referringField.getDeclaringClass())) {
+            JsonManagedReference fieldManagedReference = getAnnotation(lastField, JsonManagedReference.class);
+            if(fieldManagedReference != null && lastField.getType().equals(f.getDeclaringClass())) {
+              backReferenced = true;
+              break;
+            }
+          }
+        }
+
+        annotated = (jsonIgnore != null && jsonIgnore.value()) ||
+            (classIgnoreProperties != null && Arrays.asList(classIgnoreProperties.value()).contains(f.getName())) ||
+            (fieldIgnoreProperties != null && Arrays.asList(fieldIgnoreProperties.value()).contains(f.getName())) ||
+            backReferenced;
+        fitToMaxSize(annotatedWithIgnoreCache).put(f, annotated);
+      } else {
+        annotated = annotatedWithIgnoreCache.get(f);
+      }
+
+      return annotated;
+    }
+
+    private Class<?>[] getInterfaces(Class cls) {
+      Class<?>[] interfaces = interfaceCache.get(cls);
+      if(interfaces == null) {
+        interfaces = cls.getInterfaces();
+        fitToMaxSize(interfaceCache).put(cls, interfaces);
+      }
+      return interfaces;
+    }
+
+    private Field[] getDeclaredFields(Class cls) {
+      Field[] fields = classFieldsCache.get(cls);
+      if(fields == null) {
+        fields = cls.getDeclaredFields();
+        fitToMaxSize(classFieldsCache).put(cls, fields);
+      }
+      return fields;
+    }
+
+    private Annotation[] getAnnotations(Class cls) {
+      Annotation[] annotations = classAnnotationCache.get(cls);
+      if(annotations == null) {
+        annotations = cls.getAnnotations();
+        fitToMaxSize(classAnnotationCache).put(cls, annotations);
+      }
+      return annotations;
+    }
+
+    private Annotation[] getAnnotations(Field field) {
+      Annotation[] annotations = fieldAnnotationCache.get(field);
+      if(annotations == null) {
+        annotations = field.getAnnotations();
+        fitToMaxSize(fieldAnnotationCache).put(field, annotations);
+      }
+      return annotations;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Annotation> T getAnnotation(Class cls, Class<T> annotation) {
+      Annotation[] annotations = getAnnotations(cls);
+      if(annotations != null) {
+        for(Annotation a : annotations) {
+          if(a.annotationType().equals(annotation)) {
+            return (T) a;
+          }
+        }
+      }
+      return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Annotation> T getAnnotation(Field field, Class<T> annotation) {
+      Annotation[] annotations = getAnnotations(field);
+      if(annotations != null) {
+        for(Annotation a : annotations) {
+          if(a.annotationType().equals(annotation)) {
+            return (T) a;
+          }
+        }
+      }
+      return null;
+    }
+
+    //synchronizes on the provided map to provide threadsafety
+    private <T, V> Map<T, V> fitToMaxSize(Map<T, V> map) {
+      synchronized (map) {
+        if(map.size() > maxCacheSize) {
+          map.remove(map.keySet().iterator().next());
+        }
+      }
+      return map;
+    }
   }
-
-
 }
