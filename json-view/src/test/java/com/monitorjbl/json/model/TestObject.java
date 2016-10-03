@@ -41,6 +41,7 @@ public class TestObject implements TestInterface {
   private URI uri;
   private Class cls;
   private BigDecimal bigDecimal;
+  private CustomType custom;
 
   public String getStr1() {
     return str1;
@@ -216,5 +217,13 @@ public class TestObject implements TestInterface {
 
   public void setBigDecimal(BigDecimal bigDecimal) {
     this.bigDecimal = bigDecimal;
+  }
+  
+  public CustomType getCustom() {
+    return custom;
+  }
+
+  public void setCustom(CustomType custom) {
+    this.custom = custom;
   }
 }

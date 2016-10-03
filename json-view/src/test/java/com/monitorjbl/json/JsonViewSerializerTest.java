@@ -1,23 +1,12 @@
 package com.monitorjbl.json;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.io.BaseEncoding;
-import com.google.common.primitives.Ints;
-import com.monitorjbl.json.model.TestBackreferenceObject;
-import com.monitorjbl.json.model.TestBackreferenceObject.TestForwardReferenceObject;
-import com.monitorjbl.json.model.TestChildObject;
-import com.monitorjbl.json.model.TestNonNulls;
-import com.monitorjbl.json.model.TestNulls;
-import com.monitorjbl.json.model.TestObject;
-import com.monitorjbl.json.model.TestObject.TestEnum;
-import com.monitorjbl.json.model.TestSubobject;
-import com.monitorjbl.json.model.TestUnrelatedObject;
-import org.junit.Before;
-import org.junit.Test;
+import static com.monitorjbl.json.Match.match;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -31,24 +20,40 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.monitorjbl.json.Match.match;
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.io.BaseEncoding;
+import com.google.common.primitives.Ints;
+import com.monitorjbl.json.model.CustomType;
+import com.monitorjbl.json.model.CustomTypeSerializer;
+import com.monitorjbl.json.model.TestBackreferenceObject;
+import com.monitorjbl.json.model.TestBackreferenceObject.TestForwardReferenceObject;
+import com.monitorjbl.json.model.TestChildObject;
+import com.monitorjbl.json.model.TestNonNulls;
+import com.monitorjbl.json.model.TestNulls;
+import com.monitorjbl.json.model.TestObject;
+import com.monitorjbl.json.model.TestObject.TestEnum;
+import com.monitorjbl.json.model.TestSubobject;
+import com.monitorjbl.json.model.TestUnrelatedObject;
 
 @SuppressWarnings("unchecked")
 public class JsonViewSerializerTest {
 
   ObjectMapper sut;
+  JsonViewSerializer serializer;
 
   @Before
   public void setup() {
     sut = new ObjectMapper();
     SimpleModule module = new SimpleModule();
-    module.addSerializer(JsonView.class, new JsonViewSerializer());
+    this.serializer=new JsonViewSerializer();
+    module.addSerializer(JsonView.class, this.serializer);
     sut.registerModule(module);
   }
 
@@ -701,4 +706,36 @@ public class JsonViewSerializerTest {
     assertNotNull(obj.get("bigDecimal"));
     assertEquals(3.141592653589793, obj.get("bigDecimal"));
   }
+  
+    @Test
+    public void testCustomSerializationByDefault() throws Exception {
+	TestObject ref = new TestObject();
+	CustomType custom = new CustomType(5l, "hello");
+	ref.setCustom(custom);
+
+	String serialized = sut.writeValueAsString(JsonView.with(ref));
+	Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+	assertNotNull(obj.get("custom"));
+	assertTrue(obj.get("custom") instanceof Map);
+	assertTrue(((Map) obj.get("custom")).get("name").equals("hello"));
+	assertTrue(((Map) obj.get("custom")).get("sid").equals(5));
+    }
+
+    @Test
+    public void testCustomSerializationRegistered() throws Exception {
+	TestObject ref = new TestObject();
+	CustomType custom = new CustomType(5l, "hello");
+	ref.setCustom(custom);
+
+	this.serializer.registerCustomSerializer(CustomType.class, new CustomTypeSerializer());
+
+	String serialized = sut.writeValueAsString(JsonView.with(ref));
+	Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+	assertNotNull(obj.get("custom"));
+	assertTrue(obj.get("custom") instanceof String);
+	assertTrue((obj.get("custom")).equals("5[hello]"));
+    }
+
 }
