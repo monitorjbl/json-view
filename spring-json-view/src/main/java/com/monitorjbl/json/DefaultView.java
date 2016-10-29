@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+/**
+ * Configures default serializer settings in a Spring environment. This is configured
+ * identically to a JsonView instance, simply use the onClass() method to set matchers.
+ */
 public class DefaultView {
   private final Map<Class, Match> matches;
 

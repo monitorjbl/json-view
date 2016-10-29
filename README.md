@@ -297,6 +297,42 @@ public class JsonController {
 }
 ```
 
+## Default views
+
+If you would like to set common views for specific classes, simply include a `DefaultView` instance in the `JsonViewSupportFactoryBean`.
+
+**Java config**
+```java
+@EnableWebMvc
+@Configuration
+public class Context extends WebMvcConfigurerAdapter {
+  @Bean
+  public JsonViewSupportFactoryBean views() {
+    return new JsonViewSupportFactoryBean(DefaultView.create()
+        .onClass(TestObject.class, Match.match()
+          .exclude("int1")
+          .include("ignoredDirect")));
+  }
+}
+```
+
+**XML config**
+
+For a real example, look at the following test files:
+
+* [DefaultViewFactory](spring-json-view/src/test/java/com/monitorjbl/json/server/DefaultViewFactory.java)
+* [XML configuration](spring-json-view/src/test/resources/context.xml)
+
+```xml
+<bean id="jsonViewSupport" class="com.monitorjbl.json.JsonViewSupportFactoryBean">
+  <constructor-arg ref="defaultView"/>
+</bean>
+
+<!-- Bean in which you create a factory method to generate a DefaultView instance -->
+<bean id="defaultView" class="com.monitorjbl.json.server.DefaultViewFactory" factory-method="instance"/>
+
+```
+
 # Building from source
 
 To build, all you need is Java 7+, Maven 3+, and git:

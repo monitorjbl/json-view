@@ -33,6 +33,10 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
     this(new JsonViewMessageConverter(mapper.copy()), DefaultView.create());
   }
 
+  public JsonViewSupportFactoryBean(DefaultView defaultView) {
+    this(new JsonViewMessageConverter(new ObjectMapper()), defaultView);
+  }
+
   public JsonViewSupportFactoryBean(ObjectMapper mapper, DefaultView defaultView) {
     this(new JsonViewMessageConverter(mapper.copy()), defaultView);
   }

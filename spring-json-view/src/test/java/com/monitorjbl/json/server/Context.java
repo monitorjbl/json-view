@@ -2,7 +2,6 @@ package com.monitorjbl.json.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.monitorjbl.json.JsonViewSupportFactoryBean;
-import com.monitorjbl.json.server.controller.DefaultViewConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +14,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 public class Context extends WebMvcConfigurerAdapter {
   @Bean
   public JsonViewSupportFactoryBean views() {
-    return new JsonViewSupportFactoryBean(JacksonConfiguration.configureJackson(new ObjectMapper()), DefaultViewConfig.instance());
+    return new JsonViewSupportFactoryBean(JacksonConfiguration.configureJackson(new ObjectMapper()), DefaultViewFactory.instance());
   }
 }

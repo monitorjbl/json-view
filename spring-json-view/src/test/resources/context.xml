@@ -23,5 +23,5 @@
 
 
   <bean id="mapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
-  <bean id="defaultView" class="com.monitorjbl.json.server.controller.DefaultViewConfig" factory-method="instance"/>
+  <bean id="defaultView" class="com.monitorjbl.json.server.DefaultViewFactory" factory-method="instance"/>
 </beans>
