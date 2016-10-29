@@ -14,8 +14,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -145,6 +147,67 @@ public abstract class ConfigTest {
     assertEquals("qwerqwer", map.get("str2"));
     assertEquals("ignored", map.get("ignoredDirect"));
     assertNull(map.get("int1"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testDefaultViewSupport() throws Exception {
+    HttpResponse response = Request.Get("http://localhost:8080/defaultView").execute().returnResponse();
+    Map<String, Object> map = new ObjectMapper().readValue(response.getEntity().getContent(), HashMap.class);
+
+    assertEquals(4, map.get("id"));
+    assertEquals("someName", map.get("name"));
+    assertNull(map.get("ignoredString"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testDefaultViewSupportWithInheritance() throws Exception {
+    HttpResponse response = Request.Get("http://localhost:8080/defaultViewInheritance").execute().returnResponse();
+    Map<String, Object> map = new ObjectMapper().readValue(response.getEntity().getContent(), HashMap.class);
+
+    assertEquals(4, map.get("id"));
+    assertEquals("someName", map.get("name"));
+    assertEquals("asdf", map.get("notIgnored"));
+    assertNull(map.get("ignoredString"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testDefaultViewSupportWithLists() throws Exception {
+    HttpResponse response = Request.Get("http://localhost:8080/defaultViewList").execute().returnResponse();
+    List<Map<String, Object>> list = new ObjectMapper().readValue(response.getEntity().getContent(), ArrayList.class);
+
+    assertEquals(1, list.size());
+    Map<String, Object> map = list.get(0);
+    assertEquals(4, map.get("id"));
+    assertEquals("someName", map.get("name"));
+    assertNull(map.get("ignoredString"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testDefaultViewSupportWithSets() throws Exception {
+    HttpResponse response = Request.Get("http://localhost:8080/defaultViewSet").execute().returnResponse();
+    Set<Map<String, Object>> set = new ObjectMapper().readValue(response.getEntity().getContent(), HashSet.class);
+
+    assertEquals(1, set.size());
+    Map<String, Object> map = set.iterator().next();
+    assertEquals(4, map.get("id"));
+    assertEquals("someName", map.get("name"));
+    assertNull(map.get("ignoredString"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void testDefaultViewSupportWithMaps() throws Exception {
+    HttpResponse response = Request.Get("http://localhost:8080/defaultViewMap").execute().returnResponse();
+    Map<String, Map<String, Object>> map = new ObjectMapper().readValue(response.getEntity().getContent(), HashMap.class);
+
+    assertNotNull(map.get("myobj"));
+    assertEquals(4, map.get("myobj").get("id"));
+    assertEquals("someName", map.get("myobj").get("name"));
+    assertNull(map.get("myobj").get("ignoredString"));
   }
 
   @AfterClass
