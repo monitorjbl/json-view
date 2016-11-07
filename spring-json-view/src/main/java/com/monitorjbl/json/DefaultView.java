@@ -77,7 +77,14 @@ public class DefaultView {
       if(matches.containsKey(current)) {
         return matches.get(current);
       }
-      current = cls.getSuperclass();
+
+      //does interface exist in the map?
+      for(Class iface : cls.getInterfaces()) {
+        if(matches.containsKey(iface)) {
+          return matches.get(iface);
+        }
+      }
+      current = current.getSuperclass();
     }
     return null;
   }
