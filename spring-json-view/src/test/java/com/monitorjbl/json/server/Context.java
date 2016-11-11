@@ -14,6 +14,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 public class Context extends WebMvcConfigurerAdapter {
   @Bean
   public JsonViewSupportFactoryBean views() {
-    return new JsonViewSupportFactoryBean(JacksonConfiguration.configureJackson(new ObjectMapper()));
+    return new JsonViewSupportFactoryBean(JacksonConfiguration.configureJackson(new ObjectMapper()), DefaultViewFactory.instance());
   }
 }

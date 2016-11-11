@@ -14,9 +14,11 @@ public class JsonViewReturnValueHandler implements HandlerMethodReturnValueHandl
   private static final Logger log = LoggerFactory.getLogger(JsonViewReturnValueHandler.class);
 
   private final HandlerMethodReturnValueHandler delegate;
+  private final DefaultView defaultView;
 
-  public JsonViewReturnValueHandler(List<HttpMessageConverter<?>> converters) {
+  public JsonViewReturnValueHandler(List<HttpMessageConverter<?>> converters, DefaultView defaultView) {
     this.delegate = new JsonViewResponseProcessor(converters);
+    this.defaultView = defaultView;
   }
 
   @Override
@@ -31,7 +33,13 @@ public class JsonViewReturnValueHandler implements HandlerMethodReturnValueHandl
       val = JsonResultRetriever.retrieve();
       log.debug("Found [" + ((JsonView) val).getValue().getClass() + "] to serialize");
     } else {
-      log.debug("No JsonView found for thread, using returned value");
+      JsonView view = defaultView.getMatch(val);
+      if(view != null) {
+        val = view;
+        log.debug("Default view found for " + val.getClass().getCanonicalName() + ", applied before serialization");
+      } else {
+        log.debug("No JsonView found for thread, using returned value");
+      }
     }
 
     delegate.handleReturnValue(val, returnType, mavContainer, webRequest);

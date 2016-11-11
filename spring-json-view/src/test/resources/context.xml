@@ -18,7 +18,10 @@
   </bean>
   <bean id="jsonViewSupport" class="com.monitorjbl.json.JsonViewSupportFactoryBean">
     <constructor-arg ref="mapper"/>
+    <constructor-arg ref="defaultView"/>
   </bean>
 
+
   <bean id="mapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
+  <bean id="defaultView" class="com.monitorjbl.json.server.DefaultViewFactory" factory-method="instance"/>
 </beans>

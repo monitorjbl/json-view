@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMap;
 import com.monitorjbl.json.JsonResult;
 import com.monitorjbl.json.JsonView;
 import com.monitorjbl.json.Match;
+import com.monitorjbl.json.model.TestDefaultViewObject;
+import com.monitorjbl.json.model.TestDefaultViewSubobject;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestSubobject;
 import org.slf4j.Logger;
@@ -18,8 +20,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 
 @Controller
 public class JsonController {
@@ -146,5 +152,56 @@ public class JsonController {
                 .exclude("int1")
                 .include("ignoredDirect")))
             .returnValue());
+  }
+
+  @RequestMapping(method = RequestMethod.GET, value = "/defaultView")
+  @ResponseBody
+  public TestDefaultViewObject defaultView() {
+    TestDefaultViewObject obj = new TestDefaultViewObject();
+    obj.setId(4L);
+    obj.setName("someName");
+    obj.setIgnoredString("oeisjfs");
+    return obj;
+  }
+
+  @RequestMapping(method = RequestMethod.GET, value = "/defaultViewInheritance")
+  @ResponseBody
+  public TestDefaultViewObject defaultViewInheritance() {
+    TestDefaultViewSubobject obj = new TestDefaultViewSubobject();
+    obj.setId(4L);
+    obj.setName("someName");
+    obj.setNotIgnored("asdf");
+    obj.setIgnoredString("oeisjfs");
+    return obj;
+  }
+
+  @RequestMapping(method = RequestMethod.GET, value = "/defaultViewList")
+  @ResponseBody
+  public List<TestDefaultViewObject> defaultViewList() {
+    TestDefaultViewObject obj = new TestDefaultViewObject();
+    obj.setId(4L);
+    obj.setName("someName");
+    obj.setIgnoredString("oeisjfs");
+    return singletonList(obj);
+  }
+
+  @RequestMapping(method = RequestMethod.GET, value = "/defaultViewSet")
+  @ResponseBody
+  public Set<TestDefaultViewObject> defaultViewSet() {
+    TestDefaultViewObject obj = new TestDefaultViewObject();
+    obj.setId(4L);
+    obj.setName("someName");
+    obj.setIgnoredString("oeisjfs");
+    return singleton(obj);
+  }
+
+  @RequestMapping(method = RequestMethod.GET, value = "/defaultViewMap")
+  @ResponseBody
+  public Map<String, TestDefaultViewObject> defaultViewMap() {
+    TestDefaultViewObject obj = new TestDefaultViewObject();
+    obj.setId(4L);
+    obj.setName("someName");
+    obj.setIgnoredString("oeisjfs");
+    return singletonMap("myobj", obj);
   }
 }
