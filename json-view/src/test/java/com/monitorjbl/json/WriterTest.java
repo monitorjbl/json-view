@@ -17,8 +17,10 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Sets.newHashSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -46,7 +48,7 @@ public class WriterTest {
 
   @Test
   public void testContainsMatchingPattern_basic() {
-    List<String> patterns = newArrayList("field1", "field2");
+    Set<String> patterns = newHashSet("field1", "field2");
     assertEquals(1, sut.containsMatchingPattern(patterns, "field1", true));
     assertEquals(1, sut.containsMatchingPattern(patterns, "field2", true));
     assertEquals(-1, sut.containsMatchingPattern(patterns, "field3", true));
@@ -54,7 +56,7 @@ public class WriterTest {
 
   @Test
   public void testContainsMatchingPattern_wildcard() {
-    List<String> patterns = newArrayList("field*");
+    Set<String> patterns = newHashSet("field*");
     assertEquals(0, sut.containsMatchingPattern(patterns, "field1", true));
     assertEquals(0, sut.containsMatchingPattern(patterns, "field2", true));
     assertEquals(-1, sut.containsMatchingPattern(patterns, "val1", true));
@@ -62,7 +64,7 @@ public class WriterTest {
 
   @Test
   public void testContainsMatchingPattern_wildcardAll() {
-    List<String> patterns = newArrayList("*");
+    Set<String> patterns = newHashSet("*");
     assertEquals(0, sut.containsMatchingPattern(patterns, "field1", true));
     assertEquals(0, sut.containsMatchingPattern(patterns, "field2", true));
     assertEquals(0, sut.containsMatchingPattern(patterns, "val1", true));
@@ -70,14 +72,14 @@ public class WriterTest {
 
   @Test
   public void testContainsMatchingPattern_wildcardInChildPath() {
-    List<String> patterns = newArrayList("*.green");
+    Set<String> patterns = newHashSet("*.green");
     assertEquals(0, sut.containsMatchingPattern(patterns, "field1.green", true));
     assertEquals(-1, sut.containsMatchingPattern(patterns, "field2.blue", true));
   }
 
   @Test
   public void testContainsMatchingPattern_wildcardInComplexPath() {
-    List<String> patterns = newArrayList("*.green.*");
+    Set<String> patterns = newHashSet("*.green.*");
     assertEquals(-1, sut.containsMatchingPattern(patterns, "field1.green", true));
     assertEquals(-1, sut.containsMatchingPattern(patterns, "field2.blue", true));
     assertEquals(0, sut.containsMatchingPattern(patterns, "field1.green.id", true));

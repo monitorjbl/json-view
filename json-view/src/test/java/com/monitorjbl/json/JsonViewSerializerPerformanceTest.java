@@ -11,7 +11,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -20,6 +24,7 @@ import static com.monitorjbl.json.Match.match;
 
 @RunWith(Parameterized.class)
 public class JsonViewSerializerPerformanceTest {
+  private static final Logger log = LoggerFactory.getLogger(JsonViewSerializerPerformanceTest.class);
   private int repetitions;
   private JsonViewSerializer serializer = new JsonViewSerializer();
   private ObjectMapper sut;
@@ -28,7 +33,7 @@ public class JsonViewSerializerPerformanceTest {
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(new Object[][]{
-        {500}, {1000}, {10000}, {100000}, {1000000}
+        {1000}, {10000}, {100000}, {1000000}
     });
   }
 
@@ -46,44 +51,33 @@ public class JsonViewSerializerPerformanceTest {
 
   @Test
   public void comparePerformance() throws Exception {
-    long baselineTimes = baselineRandomSingleObjectPerformance();
-    long jsonViewTimes = jsonViewRandomSingleObjectPerformance();
-    long difference = (long) (((double) jsonViewTimes) / (double) baselineTimes) * 100L;
+    long baselineTimes = randomSingleObjectPerformance(() ->
+        compare.writeValueAsString(testObject()));
+    long jsonViewTimes = randomSingleObjectPerformance(() ->
+        sut.writeValueAsString(JsonView.with(testObject()).onClass(TestObject.class, match().exclude("int1"))));
+    String difference = divide(jsonViewTimes * 100L, baselineTimes);
 
     System.out.printf("[%-8s]: | Baseline: %-8s | JsonView: %-8s | Difference: %-6s |\n",
-        repetitions, (baselineTimes / 1000000) + "ms", (jsonViewTimes / 1000000) + "ms", difference + "%");
+        repetitions, divide(baselineTimes, 1000000L) + "ms", divide(jsonViewTimes, 1000000L) + "ms", difference + "%");
   }
 
-  public long jsonViewRandomSingleObjectPerformance() throws Exception {
-    long times = 0;
-    for(int i = 0; i < repetitions; i++) {
-      TestObject ref = testObject();
-
+  public long randomSingleObjectPerformance(UncheckedRunnable mapper) throws Exception {
+    long totalTime = 0;
+    long chunkTime = 0;
+    for(int i = 1; i <= repetitions; i++) {
       long time = System.nanoTime();
-      sut.writeValueAsString(JsonView.with(ref).onClass(TestObject.class, match()
-          .exclude("int1")));
+      mapper.run();
       time = System.nanoTime() - time;
-      if(i > 100) {
-        times += time;
+
+      totalTime += time;
+      chunkTime += time;
+      if(i % 100000 == 0) {
+        log.trace("Time per 100k entries: " + ((double) chunkTime / 1000000.0) + "ms");
+        chunkTime = 0;
       }
     }
 
-    return times;
-  }
-
-  public long baselineRandomSingleObjectPerformance() throws Exception {
-    long times = 0;
-    for(int i = 0; i < repetitions; i++) {
-      TestObject ref = testObject();
-
-      long time = System.nanoTime();
-      compare.writeValueAsString(ref);
-      time = System.nanoTime() - time;
-      if(i > 100) {
-        times += time;
-      }
-    }
-    return times;
+    return totalTime;
   }
 
   TestObject testObject() {
@@ -98,5 +92,15 @@ public class JsonViewSerializerPerformanceTest {
     sub.setVal("wer");
     ref.setListOfObjects(newArrayList(sub));
     return ref;
+  }
+
+  String divide(long numerator, long denominator) {
+    DecimalFormat df = new DecimalFormat("#.###");
+    df.setRoundingMode(RoundingMode.CEILING);
+    return df.format((double) numerator / (double) denominator);
+  }
+
+  interface UncheckedRunnable {
+    public void run() throws Exception;
   }
 }

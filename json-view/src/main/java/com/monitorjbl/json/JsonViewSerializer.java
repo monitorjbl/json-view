@@ -32,13 +32,9 @@ import java.util.regex.Pattern;
 
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
-  private final int maxCacheSize;
-  private final Map<Class, Class<?>[]> interfaceCache = new HashMap<>();
-  private final Map<Class, Annotation[]> classAnnotationCache = new HashMap<>();
-  private final Map<Class, Field[]> classFieldsCache = new HashMap<>();
-  private final Map<Field, Annotation[]> fieldAnnotationCache = new HashMap<>();
-  private final Map<List<String>, Map<String, Map<Boolean, Integer>>> matchingCache = new HashMap<>();
-  private final Map<Field, Boolean> annotatedWithIgnoreCache = new HashMap<>();
+  private final Memoizer memoizer;
+  //  private final Map<List<String>, Map<String, Map<Boolean, Integer>>> matchingCache = new HashMap<>();
+//  private final Map<Field, Boolean> annotatedWithIgnoreCache = new HashMap<>();
 
   /**
    * Map of custom serializers to take into account when serializing fields.
@@ -50,7 +46,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
   }
 
   public JsonViewSerializer(int maxCacheSize) {
-    this.maxCacheSize = maxCacheSize;
+    this.memoizer = new Memoizer(maxCacheSize);
   }
 
   /**
@@ -89,7 +85,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
    *
    * @param cls The class type the serializer was registered for
    */
-  public <T> void unregisterCustomSerializer(Class<T> cls) {
+  public void unregisterCustomSerializer(Class<?> cls) {
     if(customSerializersMap != null) {
       customSerializersMap.remove(cls);
     }
@@ -447,17 +443,9 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
      * </pre>
      * <p>
      * This method is memoized to speed up execution time
-     *
-     * @param values
-     * @param pattern
-     * @return
      */
-    int containsMatchingPattern(List<String> values, String pattern, boolean matchPrefix) {
-      Map<String, Map<Boolean, Integer>> l1 = matchingCache.get(values);
-      Map<Boolean, Integer> l2 = l1 == null ? null : l1.get(pattern);
-      if(l1 != null && l2 != null) {
-        return l2.get(matchPrefix);
-      } else {
+    int containsMatchingPattern(Set<String> values, String pattern, boolean matchPrefix) {
+      return memoizer.matches(values, pattern, matchPrefix, () -> {
         int match = -1;
         for(String val : values) {
           String replaced = val.replaceAll("\\.", "\\\\.").replaceAll("\\*", ".*");
@@ -466,31 +454,16 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             break;
           }
         }
-
-        //save result to avoid having to do an expensive regex check every time
-        synchronized (matchingCache) {
-          Map<String, Map<Boolean, Integer>> first = matchingCache.containsKey(values) ? matchingCache.get(values) : new HashMap<String, Map<Boolean, Integer>>();
-          Map<Boolean, Integer> second = first.containsKey(pattern) ? first.get(pattern) : new HashMap<Boolean, Integer>();
-
-          second.put(matchPrefix, match);
-          first.put(pattern, second);
-          matchingCache.put(values, first);
-        }
-
         return match;
-      }
+      });
     }
 
     /**
      * Returns a boolean indicating whether the provided field is annotated with
      * some form of ignore. This method is memoized to speed up execution time
-     *
-     * @param f
-     * @return
      */
     boolean annotatedWithIgnore(Field f) {
-      boolean annotated;
-      if(!annotatedWithIgnoreCache.containsKey(f)) {
+      return memoizer.ignoreAnnotations(f, () -> {
         JsonIgnore jsonIgnore = getAnnotation(f, JsonIgnore.class);
         JsonIgnoreProperties classIgnoreProperties = getAnnotation(f.getDeclaringClass(), JsonIgnoreProperties.class);
         JsonIgnoreProperties fieldIgnoreProperties = null;
@@ -512,52 +485,27 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
           }
         }
 
-        annotated = (jsonIgnore != null && jsonIgnore.value()) ||
+        return (jsonIgnore != null && jsonIgnore.value()) ||
             (classIgnoreProperties != null && Arrays.asList(classIgnoreProperties.value()).contains(f.getName())) ||
             (fieldIgnoreProperties != null && Arrays.asList(fieldIgnoreProperties.value()).contains(f.getName())) ||
             backReferenced;
-        fitToMaxSize(annotatedWithIgnoreCache).put(f, annotated);
-      } else {
-        annotated = annotatedWithIgnoreCache.get(f);
-      }
-
-      return annotated;
+      });
     }
 
     private Class<?>[] getInterfaces(Class cls) {
-      Class<?>[] interfaces = interfaceCache.get(cls);
-      if(interfaces == null) {
-        interfaces = cls.getInterfaces();
-        fitToMaxSize(interfaceCache).put(cls, interfaces);
-      }
-      return interfaces;
+      return cls.getInterfaces();
     }
 
     private Field[] getDeclaredFields(Class cls) {
-      Field[] fields = classFieldsCache.get(cls);
-      if(fields == null) {
-        fields = cls.getDeclaredFields();
-        fitToMaxSize(classFieldsCache).put(cls, fields);
-      }
-      return fields;
+      return cls.getDeclaredFields();
     }
 
     private Annotation[] getAnnotations(Class cls) {
-      Annotation[] annotations = classAnnotationCache.get(cls);
-      if(annotations == null) {
-        annotations = cls.getAnnotations();
-        fitToMaxSize(classAnnotationCache).put(cls, annotations);
-      }
-      return annotations;
+      return cls.getAnnotations();
     }
 
     private Annotation[] getAnnotations(Field field) {
-      Annotation[] annotations = fieldAnnotationCache.get(field);
-      if(annotations == null) {
-        annotations = field.getAnnotations();
-        fitToMaxSize(fieldAnnotationCache).put(field, annotations);
-      }
-      return annotations;
+      return field.getAnnotations();
     }
 
     @SuppressWarnings("unchecked")
@@ -589,7 +537,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     //synchronizes on the provided map to provide threadsafety
     private <T, V> Map<T, V> fitToMaxSize(Map<T, V> map) {
       synchronized (map) {
-        if(map.size() > maxCacheSize) {
+        if(map.size() > 1) {
           map.remove(map.keySet().iterator().next());
         }
       }

@@ -98,22 +98,22 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
    *   bean.registerCustomSerializer( DateTime.class, new DateTimeSerializer() );
    * </code>
    * @param <T> Type class of the serializer
-   * @param class1 {@link Class} the class type you want to add a custom serializer 
+   * @param cls {@link Class} the class type you want to add a custom serializer
    * @param forType {@link JsonSerializer} the serializer you want to apply for that type
    */
-  public <T> void registerCustomSerializer( Class<T> class1, JsonSerializer<T> forType )
+  public <T> void registerCustomSerializer( Class<T> cls, JsonSerializer<T> forType )
   {
-      this.converter.registerCustomSerializer( class1, forType );
+      this.converter.registerCustomSerializer( cls, forType );
   }
   
   
   /**
    * Unregister a previously registtered serializer. @see registerCustomSerializer
-   * @param class1
+   * @param cls The class type the serializer was registered for
    */
-  public <T> void unregisterCustomSerializer( Class<T> class1 )
+  public void unregisterCustomSerializer( Class<?> cls )
   {
-      this.converter.unregisterCustomSerializer(class1);
+      this.converter.unregisterCustomSerializer(cls);
   }
 
 }
