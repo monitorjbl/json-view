@@ -1,7 +1,9 @@
 language: java
-
+cache: true
 jdk:
    - oraclejdk8
 
+install:
+  - mvn clean install -DskipTests -B
 script:
    - mvn clean package -B
