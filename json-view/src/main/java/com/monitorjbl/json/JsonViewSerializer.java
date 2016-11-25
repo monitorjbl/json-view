@@ -1,5 +1,16 @@
 package com.monitorjbl.json;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
+
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -19,17 +30,6 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize.Inclusion;
-
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
   private final int maxCacheSize;
@@ -43,7 +43,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
   /**
    * Map of custom serializers to take into account when serializing fields.
    */
-  private Map<Class<?>,JsonSerializer<Object>> customSerializersMap=null;
+  private Map<Class<?>, JsonSerializer<Object>> customSerializersMap = null;
 
   public JsonViewSerializer() {
     this(1024);
@@ -59,34 +59,43 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
    * Thus, when JSonView find a field of that type (DateTime), it will delegate the serialization to the serializer specified.<br>
    * Example:<br>
    * <code>
-   *   JsonViewSupportFactoryBean bean = new JsonViewSupportFactoryBean( mapper );
-   *   bean.registerCustomSerializer( DateTime.class, new DateTimeSerializer() );
+   * JsonViewSupportFactoryBean bean = new JsonViewSupportFactoryBean( mapper );
+   * bean.registerCustomSerializer( DateTime.class, new DateTimeSerializer() );
    * </code>
-   * @param <T> Type class of the serializer
-   * @param class1 {@link Class} the class type you want to add a custom serializer 
-   * @param forType {@link JsonSerializer} the serializer you want to apply for that type
+   *
+   * @param <T>     Type class of the serializer
+   * @param cls     {@link Class} The class type you want to add a custom serializer
+   * @param forType {@link JsonSerializer} The serializer you want to apply for that type
    */
-  @SuppressWarnings( "unchecked" )
-  public <T> void registerCustomSerializer( Class<T> class1, JsonSerializer<T> forType )
-  {
-      if(this.customSerializersMap==null){
-          this.customSerializersMap=new HashMap<>();
-      }
-      this.customSerializersMap.put( class1,(JsonSerializer<Object>) forType );
+  @SuppressWarnings("unchecked")
+  public <T> void registerCustomSerializer(Class<T> cls, JsonSerializer<T> forType) {
+    if(customSerializersMap == null) {
+      customSerializersMap = new HashMap<>();
+    }
+
+    if(cls == null) {
+      throw new IllegalArgumentException("Class must not be null");
+    } else if(cls.equals(JsonView.class)) {
+      throw new IllegalArgumentException("Class cannot be " + JsonView.class);
+    } else if(customSerializersMap.containsKey(cls)) {
+      throw new IllegalArgumentException("Class " + cls + " already has a serializer registered (" + customSerializersMap.get(cls) + ")");
+    }
+
+    customSerializersMap.put(cls, (JsonSerializer<Object>) forType);
   }
 
   /**
-   * Unregister a previously registtered serializer. @see registerCustomSerializer
-   * @param class1
+   * Unregister a previously registered serializer. @see registerCustomSerializer
+   *
+   * @param cls The class type the serializer was registered for
    */
-  public <T> void unregisterCustomSerializer( Class<T> class1 )
-  {
-      if(this.customSerializersMap!=null){
-        this.customSerializersMap.remove( class1);
-      }
+  public <T> void unregisterCustomSerializer(Class<T> cls) {
+    if(customSerializersMap != null) {
+      customSerializersMap.remove(cls);
+    }
   }
 
-  
+
   @Override
   public void serialize(JsonView result, JsonGenerator jgen, SerializerProvider serializers) throws IOException {
     new JsonWriter(serializers, jgen, result).write(null, result.getValue());
@@ -116,6 +125,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       this.serializerProvider = serializerProvider;
     }
 
+    //internal use only to encapsulate what the current state was
     private JsonWriter(JsonGenerator jgen, JsonView result, Match currentMatch,
                        String currentPath, Stack<String> path, Field referringField, SerializerProvider serializerProvider) {
       this.jgen = jgen;
@@ -282,24 +292,24 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         Field[] fields = getDeclaredFields(cls);
         for(Field field : fields) {
           try {
-              field.setAccessible(true);
-              Object val = field.get(obj);
-              
-              if(valueAllowed(val, obj.getClass()) && fieldAllowed(field, obj.getClass())) {
-                  String name = field.getName();
-                  jgen.writeFieldName(name);
+            field.setAccessible(true);
+            Object val = field.get(obj);
 
-                  if(customSerializersMap!=null && val!=null){
-                      JsonSerializer<Object> serializer=(JsonSerializer<Object>) customSerializersMap.get( val.getClass() );
-                      if(serializer!=null){
-                          serializer.serialize(val,jgen,serializerProvider);
-                      }else{
-                          new JsonWriter(jgen, result, currentMatch, currentPath, path, field, serializerProvider).write(name, val);
-                      }
-                  }else{
-                      new JsonWriter(jgen, result, currentMatch, currentPath, path, field, serializerProvider).write(name, val);
-                  }
+            if(valueAllowed(val, obj.getClass()) && fieldAllowed(field, obj.getClass())) {
+              String name = field.getName();
+              jgen.writeFieldName(name);
+
+              if(customSerializersMap != null && val != null) {
+                JsonSerializer<Object> serializer = (JsonSerializer<Object>) customSerializersMap.get(val.getClass());
+                if(serializer != null) {
+                  serializer.serialize(val, jgen, serializerProvider);
+                } else {
+                  new JsonWriter(jgen, result, currentMatch, currentPath, path, field, serializerProvider).write(name, val);
+                }
+              } else {
+                new JsonWriter(jgen, result, currentMatch, currentPath, path, field, serializerProvider).write(name, val);
               }
+            }
           } catch(IllegalArgumentException | IllegalAccessException e) {
             e.printStackTrace();
           }
