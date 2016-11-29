@@ -20,6 +20,8 @@ import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URL;
+import java.time.ZonedDateTime;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -32,9 +34,10 @@ import java.util.regex.Pattern;
 
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
+  /**
+   * Cached results from expensive (pure) methods
+   */
   private final Memoizer memoizer;
-  //  private final Map<List<String>, Map<String, Map<Boolean, Integer>>> matchingCache = new HashMap<>();
-//  private final Map<Field, Boolean> annotatedWithIgnoreCache = new HashMap<>();
 
   /**
    * Map of custom serializers to take into account when serializing fields.
@@ -165,6 +168,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     boolean writeSpecial(Object obj) throws IOException {
       if(obj instanceof Date) {
         serializerProvider.defaultSerializeDateValue((Date) obj, jgen);
+      } else if(obj instanceof Temporal) {
+        serializerProvider.defaultSerializeValue(obj, jgen);
       } else if(obj instanceof URL) {
         jgen.writeString(obj.toString());
       } else if(obj instanceof URI) {

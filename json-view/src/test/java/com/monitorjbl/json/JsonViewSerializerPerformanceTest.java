@@ -21,6 +21,7 @@ import java.util.Collection;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.monitorjbl.json.Match.match;
+import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 public class JsonViewSerializerPerformanceTest {
@@ -33,7 +34,7 @@ public class JsonViewSerializerPerformanceTest {
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(new Object[][]{
-        {1000}, {10000}, {100000}, {1000000}
+        {100}, {1000}, {10000}, {100000}
     });
   }
 
@@ -59,6 +60,10 @@ public class JsonViewSerializerPerformanceTest {
 
     System.out.printf("[%-8s]: | Baseline: %-8s | JsonView: %-8s | Difference: %-6s |\n",
         repetitions, divide(baselineTimes, 1000000L) + "ms", divide(jsonViewTimes, 1000000L) + "ms", difference + "%");
+
+    if(((double) jsonViewTimes / (double) baselineTimes) > 10) {
+      fail("Performance delta is greater than 10x slower than basic Jackson (" + difference + "% slower)");
+    }
   }
 
   public long randomSingleObjectPerformance(UncheckedRunnable mapper) throws Exception {

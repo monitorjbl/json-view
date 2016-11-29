@@ -1,32 +1,11 @@
 package com.monitorjbl.json;
 
-import static com.monitorjbl.json.Match.match;
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.net.URI;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.Before;
-import org.junit.Test;
-
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Ints;
@@ -35,12 +14,36 @@ import com.monitorjbl.json.model.CustomTypeSerializer;
 import com.monitorjbl.json.model.TestBackreferenceObject;
 import com.monitorjbl.json.model.TestBackreferenceObject.TestForwardReferenceObject;
 import com.monitorjbl.json.model.TestChildObject;
+import com.monitorjbl.json.model.TestInterface;
 import com.monitorjbl.json.model.TestNonNulls;
 import com.monitorjbl.json.model.TestNulls;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestObject.TestEnum;
 import com.monitorjbl.json.model.TestSubobject;
 import com.monitorjbl.json.model.TestUnrelatedObject;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.monitorjbl.json.Match.match;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("unchecked")
 public class JsonViewSerializerTest {
@@ -50,11 +53,12 @@ public class JsonViewSerializerTest {
 
   @Before
   public void setup() {
-    sut = new ObjectMapper();
-    SimpleModule module = new SimpleModule();
-    this.serializer=new JsonViewSerializer();
-    module.addSerializer(JsonView.class, this.serializer);
-    sut.registerModule(module);
+    this.serializer = new JsonViewSerializer();
+    sut = new ObjectMapper()
+        .registerModule(new JsonViewModule(serializer))
+        .registerModule(new ParameterNamesModule())
+        .registerModule(new Jdk8Module())
+        .registerModule(new JavaTimeModule());
   }
 
   @Test
@@ -272,7 +276,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-                                       ));
+    ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, match()
@@ -297,7 +301,7 @@ public class JsonViewSerializerTest {
     ref.setMapWithIntKeys(ImmutableMap.of(
         1, "red",
         2, "green"
-                                         ));
+    ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, match()
@@ -383,7 +387,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-                                       ));
+    ));
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
@@ -408,7 +412,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-                                       ));
+    ));
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
@@ -641,22 +645,21 @@ public class JsonViewSerializerTest {
     assertNotNull(list.get(1).get("otherVal"));
   }
 
-//  @Test
-//  public void testMatchingOnInterfaces() throws Exception {
-//    TestObject ref = new TestObject();
-//    ref.setStr1("asdf");
-//    ref.setDate(new Date());
-//
-//    String serialized = sut.writeValueAsString(JsonView.with(ref)
-//        .onClass(TestInterface.class,
-//            match().exclude("date")));
-//    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
-//
-//    assertNotNull(obj.get("str1"));
-//    assertEquals( ref.getStr1(),obj.get("str1"));
-//    assertNull(obj.get("date"));
-//  }
+  @Test
+  public void testMatchingOnInterfaces() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setStr1("asdf");
+    ref.setDate(new Date());
 
+    String serialized = sut.writeValueAsString(JsonView.with(ref)
+        .onClass(TestInterface.class,
+            match().exclude("date")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("str1"));
+    assertEquals(ref.getStr1(), obj.get("str1"));
+    assertNull(obj.get("date"));
+  }
 
   @Test
   public void testIgnorePropertiesOnField() throws Exception {
@@ -706,36 +709,60 @@ public class JsonViewSerializerTest {
     assertNotNull(obj.get("bigDecimal"));
     assertEquals(3.141592653589793, obj.get("bigDecimal"));
   }
-  
-    @Test
-    public void testCustomSerializationByDefault() throws Exception {
-	TestObject ref = new TestObject();
-	CustomType custom = new CustomType(5l, "hello");
-	ref.setCustom(custom);
 
-	String serialized = sut.writeValueAsString(JsonView.with(ref));
-	Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+  @Test
+  public void testCustomSerializationByDefault() throws Exception {
+    TestObject ref = new TestObject();
+    CustomType custom = new CustomType(5l, "hello");
+    ref.setCustom(custom);
 
-	assertNotNull(obj.get("custom"));
-	assertTrue(obj.get("custom") instanceof Map);
-	assertTrue(((Map) obj.get("custom")).get("name").equals("hello"));
-	assertTrue(((Map) obj.get("custom")).get("sid").equals(5));
-    }
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
-    @Test
-    public void testCustomSerializationRegistered() throws Exception {
-	TestObject ref = new TestObject();
-	CustomType custom = new CustomType(5l, "hello");
-	ref.setCustom(custom);
+    assertNotNull(obj.get("custom"));
+    assertTrue(obj.get("custom") instanceof Map);
+    assertTrue(((Map) obj.get("custom")).get("name").equals("hello"));
+    assertTrue(((Map) obj.get("custom")).get("sid").equals(5));
+  }
 
-	this.serializer.registerCustomSerializer(CustomType.class, new CustomTypeSerializer());
+  @Test
+  public void testCustomSerializationRegistered() throws Exception {
+    TestObject ref = new TestObject();
+    CustomType custom = new CustomType(5l, "hello");
+    ref.setCustom(custom);
 
-	String serialized = sut.writeValueAsString(JsonView.with(ref));
-	Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+    this.serializer.registerCustomSerializer(CustomType.class, new CustomTypeSerializer());
 
-	assertNotNull(obj.get("custom"));
-	assertTrue(obj.get("custom") instanceof String);
-	assertTrue((obj.get("custom")).equals("5[hello]"));
-    }
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
+    assertNotNull(obj.get("custom"));
+    assertTrue(obj.get("custom") instanceof String);
+    assertTrue((obj.get("custom")).equals("5[hello]"));
+  }
+
+  @Test
+  public void testWriteJSR310_zonedDateTime() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setZonedDateTime(ZonedDateTime.now());
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("zonedDateTime"));
+    assertTrue(obj.get("zonedDateTime") instanceof Number);
+  }
+
+  @Test
+  public void testWriteJSR310_formattedZonedDateTime() throws Exception {
+    sut.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    TestObject ref = new TestObject();
+    ref.setFormattedZonedDateTime(ZonedDateTime.now());
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("formattedZonedDateTime"));
+    assertTrue(obj.get("formattedZonedDateTime") instanceof String);
+  }
 }

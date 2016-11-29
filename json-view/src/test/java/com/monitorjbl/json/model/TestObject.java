@@ -1,11 +1,13 @@
 package com.monitorjbl.json.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URL;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,9 @@ public class TestObject implements TestInterface {
   private Class cls;
   private BigDecimal bigDecimal;
   private CustomType custom;
+  private ZonedDateTime zonedDateTime;
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+  private ZonedDateTime formattedZonedDateTime;
 
   public String getStr1() {
     return str1;
@@ -225,5 +230,21 @@ public class TestObject implements TestInterface {
 
   public void setCustom(CustomType custom) {
     this.custom = custom;
+  }
+
+  public ZonedDateTime getZonedDateTime() {
+    return zonedDateTime;
+  }
+
+  public void setZonedDateTime(ZonedDateTime zonedDateTime) {
+    this.zonedDateTime = zonedDateTime;
+  }
+
+  public ZonedDateTime getFormattedZonedDateTime() {
+    return formattedZonedDateTime;
+  }
+
+  public void setFormattedZonedDateTime(ZonedDateTime formattedZonedDateTime) {
+    this.formattedZonedDateTime = formattedZonedDateTime;
   }
 }

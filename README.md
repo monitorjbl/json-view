@@ -37,10 +37,7 @@ import com.monitorjbl.json.JsonView;
 import com.monitorjbl.json.JsonViewSerializer;
 
 //initialize jackson
-ObjectMapper mapper = new ObjectMapper();
-SimpleModule module = new SimpleModule();
-module.addSerializer(JsonView.class, new JsonViewSerializer());
-mapper.registerModule(module);
+ObjectMapper mapper = new ObjectMapper().registerModule(new JsonViewModule());
 ```
 
 ## Including
