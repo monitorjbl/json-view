@@ -775,7 +775,7 @@ public class JsonViewSerializerTest {
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
     assertNotNull(obj.get("totallyJsonProp"));
-    assertEquals("jibjab", obj.get("totallyJsonProp"));
+    assertEquals(ref.getJsonProp(), obj.get("totallyJsonProp"));
   }
 
   @Test
@@ -787,6 +787,30 @@ public class JsonViewSerializerTest {
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
     assertNotNull(obj.get("jsonPropNoValue"));
-    assertEquals("jibjab", obj.get("jsonPropNoValue"));
+    assertEquals(ref.getJsonPropNoValue(), obj.get("jsonPropNoValue"));
+  }
+
+  @Test
+  public void testDeepNestedObjects() throws Exception {
+    TestSubobject subobject = new TestSubobject();
+    subobject.setVal("someval");
+    subobject.setOtherVal("otherval");
+    TestObject ref = new TestObject();
+    ref.setStr1("somestr");
+    ref.setSub(subobject);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref)
+        .onClass(TestObject.class, match()
+            .include("sub.*")
+            .exclude("sub.otherVal")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("sub"));
+    assertTrue(obj.get("sub") instanceof Map);
+
+    Map<String, Object> subMap = (Map<String, Object>) obj.get("sub");
+    assertNotNull(subMap.get("val"));
+    assertEquals(subobject.getVal(), subMap.get("val"));
+    assertNull(subMap.get("otherVal"));
   }
 }
