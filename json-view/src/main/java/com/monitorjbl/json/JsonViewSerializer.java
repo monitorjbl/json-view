@@ -514,12 +514,14 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     private String getFieldName(Field field) {
-      JsonProperty jsonProperty = field.getAnnotation(JsonProperty.class);
-      if(jsonProperty != null && jsonProperty.value().length() > 0) {
-        return jsonProperty.value();
-      } else {
-        return field.getName();
-      }
+      return memoizer.fieldName(field, () -> {
+        JsonProperty jsonProperty = field.getAnnotation(JsonProperty.class);
+        if(jsonProperty != null && jsonProperty.value().length() > 0) {
+          return jsonProperty.value();
+        } else {
+          return field.getName();
+        }
+      });
     }
 
     @SuppressWarnings("unchecked")

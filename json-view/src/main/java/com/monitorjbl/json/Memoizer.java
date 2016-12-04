@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
+import static com.monitorjbl.json.Memoizer.FunctionCache.FIELD_NAME;
 import static com.monitorjbl.json.Memoizer.FunctionCache.IGNORE_ANNOTATIONS;
 import static com.monitorjbl.json.Memoizer.FunctionCache.MATCHES;
 
@@ -30,6 +31,10 @@ class Memoizer {
     return (T) fitToMaxSize(MATCHES).computeIfAbsent(new TriArg(values, pattern, matchPrefix), (k) -> compute.get());
   }
 
+  public <T> T fieldName(Field f, Supplier<T> compute) {
+    return (T) fitToMaxSize(FIELD_NAME).computeIfAbsent(new MonoArg(f), (k) -> compute.get());
+  }
+
   private Map<Arg, Object> fitToMaxSize(FunctionCache key) {
     Map<Arg, Object> map = cache.get(key);
     if(map.size() > maxCacheSize) {
@@ -39,7 +44,7 @@ class Memoizer {
   }
 
   enum FunctionCache {
-    IGNORE_ANNOTATIONS, MATCHES
+    IGNORE_ANNOTATIONS, MATCHES, FIELD_NAME
   }
 
   private interface Arg {}
