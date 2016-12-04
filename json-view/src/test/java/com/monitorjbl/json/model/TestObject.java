@@ -3,6 +3,7 @@ package com.monitorjbl.json.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 import java.net.URI;
@@ -47,6 +48,10 @@ public class TestObject implements TestInterface {
   private ZonedDateTime zonedDateTime;
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   private ZonedDateTime formattedZonedDateTime;
+  @JsonProperty("totallyJsonProp")
+  private String jsonProp;
+  @JsonProperty
+  private String jsonPropNoValue;
 
   public String getStr1() {
     return str1;
@@ -246,5 +251,21 @@ public class TestObject implements TestInterface {
 
   public void setFormattedZonedDateTime(ZonedDateTime formattedZonedDateTime) {
     this.formattedZonedDateTime = formattedZonedDateTime;
+  }
+
+  public String getJsonProp() {
+    return jsonProp;
+  }
+
+  public void setJsonProp(String jsonProp) {
+    this.jsonProp = jsonProp;
+  }
+
+  public String getJsonPropNoValue() {
+    return jsonPropNoValue;
+  }
+
+  public void setJsonPropNoValue(String jsonPropNoValue) {
+    this.jsonPropNoValue = jsonPropNoValue;
   }
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -20,7 +21,6 @@ import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URL;
-import java.time.ZonedDateTime;
 import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -297,11 +297,11 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             Object val = field.get(obj);
 
             if(valueAllowed(val, obj.getClass()) && fieldAllowed(field, obj.getClass())) {
-              String name = field.getName();
+              String name = getFieldName(field);
               jgen.writeFieldName(name);
 
               if(customSerializersMap != null && val != null) {
-                JsonSerializer<Object> serializer = (JsonSerializer<Object>) customSerializersMap.get(val.getClass());
+                JsonSerializer<Object> serializer = customSerializersMap.get(val.getClass());
                 if(serializer != null) {
                   serializer.serialize(val, jgen, serializerProvider);
                 } else {
@@ -511,6 +511,15 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
     private Annotation[] getAnnotations(Field field) {
       return field.getAnnotations();
+    }
+
+    private String getFieldName(Field field) {
+      JsonProperty jsonProperty = field.getAnnotation(JsonProperty.class);
+      if(jsonProperty != null && jsonProperty.value().length() > 0) {
+        return jsonProperty.value();
+      } else {
+        return field.getName();
+      }
     }
 
     @SuppressWarnings("unchecked")
