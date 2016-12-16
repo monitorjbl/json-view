@@ -12,6 +12,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @JsonIgnoreProperties({"ignoredIndirect"})
 public class TestObject implements TestInterface {
@@ -52,6 +53,7 @@ public class TestObject implements TestInterface {
   private String jsonProp;
   @JsonProperty
   private String jsonPropNoValue;
+  private UUID uuid;
 
   public String getStr1() {
     return str1;
@@ -267,5 +269,13 @@ public class TestObject implements TestInterface {
 
   public void setJsonPropNoValue(String jsonPropNoValue) {
     this.jsonPropNoValue = jsonPropNoValue;
+  }
+
+  public UUID getUuid() {
+    return uuid;
+  }
+
+  public void setUuid(UUID uuid) {
+    this.uuid = uuid;
   }
 }

@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.monitorjbl.json.Match.match;
 import static java.util.Arrays.asList;
@@ -812,5 +813,17 @@ public class JsonViewSerializerTest {
     assertNotNull(subMap.get("val"));
     assertEquals(subobject.getVal(), subMap.get("val"));
     assertNull(subMap.get("otherVal"));
+  }
+
+  @Test
+  public void testUUIDs() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setUuid(UUID.randomUUID());
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("uuid"));
+    assertEquals(ref.getUuid().toString(), obj.get("uuid"));
   }
 }

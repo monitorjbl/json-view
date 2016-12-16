@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
@@ -173,6 +174,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       } else if(obj instanceof URL) {
         jgen.writeString(obj.toString());
       } else if(obj instanceof URI) {
+        jgen.writeString(obj.toString());
+      } else if (obj instanceof UUID){
         jgen.writeString(obj.toString());
       } else if(obj instanceof Class) {
         jgen.writeString(((Class) obj).getCanonicalName());

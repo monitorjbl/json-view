@@ -108,4 +108,5 @@ public class JsonViewSerializerPerformanceTest {
   interface UncheckedRunnable {
     public void run() throws Exception;
   }
+
 }
