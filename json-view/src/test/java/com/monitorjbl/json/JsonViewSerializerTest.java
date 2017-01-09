@@ -277,7 +277,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-                                       ));
+    ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, match()
@@ -302,7 +302,7 @@ public class JsonViewSerializerTest {
     ref.setMapWithIntKeys(ImmutableMap.of(
         1, "red",
         2, "green"
-                                         ));
+    ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, match()
@@ -388,7 +388,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-                                       ));
+    ));
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
@@ -413,7 +413,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-                                       ));
+    ));
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
@@ -732,7 +732,7 @@ public class JsonViewSerializerTest {
     CustomType custom = new CustomType(5l, "hello");
     ref.setCustom(custom);
 
-    this.serializer.registerCustomSerializer(CustomType.class, new CustomTypeSerializer());
+    sut = new ObjectMapper().registerModule(new JsonViewModule(serializer).registerSerializer(CustomType.class, new CustomTypeSerializer()));
 
     String serialized = sut.writeValueAsString(JsonView.with(ref));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
