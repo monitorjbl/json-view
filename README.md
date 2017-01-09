@@ -15,6 +15,8 @@ While the declarative style certainly has many benefits (compile-time checking, 
   * [Advanced use cases](#advanced-use-cases)
     * [Wildcard matchers](#wildcard-matchers)
     * [Class matchers](#class-matchers)
+  * [Custom Serializers](#custom-serializers)
+  * [Rules](#rules)
 * [Spring Integration](#spring-integration)
   * [Including](#including-1)
   * [Configuration](#configuration)
@@ -173,7 +175,7 @@ String json = mapper.writeValueAsString(JsonView.with(list)
 
 ## Custom Serializers
 
-Due to the way json-view works, it must assume that it can serialize any class (except for certain [special types](blob/master/json-view/src/main/java/com/monitorjbl/json/JsonViewSerializer.java#L169). If you want to use another custom serializer alongside `JsonViewSerializer`, you must explicitly register them with the `JsonViewSerializer` instance. This is a little backwards compared to the way normal registration works, but its unfortunately necessary. However, the `JsonViewModule` class provides an easy way to do this:
+Due to the way json-view works, it must assume that it can serialize any class (except for certain [special types](src/main/java/com/monitorjbl/json/JsonViewSerializer.java#L169). If you want to use another custom serializer alongside `JsonViewSerializer`, you must explicitly register them with the `JsonViewSerializer` instance. This is a little backwards compared to the way normal registration works, but its unfortunately necessary. However, the `JsonViewModule` class provides an easy way to do this:
 
 ```java
 ObjectMapper mapper = new ObjectMapper().registerModule(new JsonViewModule()
