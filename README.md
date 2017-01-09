@@ -344,7 +344,7 @@ For a real example, look at the following test files:
 
 # Building from source
 
-To build, all you need is Java 7+, Maven 3+, and git:
+To build, all you need is Java 8+, Maven 3+, and git:
 
 ```
 # Checkout code from GitHub
