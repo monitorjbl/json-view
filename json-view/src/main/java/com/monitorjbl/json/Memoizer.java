@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import static com.monitorjbl.json.Memoizer.FunctionCache.FIELD_NAME;
 import static com.monitorjbl.json.Memoizer.FunctionCache.IGNORE_ANNOTATIONS;
 import static com.monitorjbl.json.Memoizer.FunctionCache.MATCHES;
+import static com.monitorjbl.json.Memoizer.FunctionCache.SERIALIZE_ANNOTATIONS;
 
 @SuppressWarnings("unchecked")
 class Memoizer {
@@ -25,6 +26,10 @@ class Memoizer {
 
   public <T> T ignoreAnnotations(Field f, Supplier<T> compute) {
     return (T) fitToMaxSize(IGNORE_ANNOTATIONS).computeIfAbsent(new MonoArg(f), (k) -> compute.get());
+  }
+
+  public <T> T serializeAnnotations(Field f, Supplier<T> compute) {
+    return (T) fitToMaxSize(SERIALIZE_ANNOTATIONS).computeIfAbsent(new MonoArg(f), (k) -> compute.get());
   }
 
   public <T> T matches(Set<String> values, String pattern, boolean matchPrefix, Supplier<T> compute) {
@@ -44,7 +49,7 @@ class Memoizer {
   }
 
   enum FunctionCache {
-    IGNORE_ANNOTATIONS, MATCHES, FIELD_NAME
+    IGNORE_ANNOTATIONS, SERIALIZE_ANNOTATIONS, MATCHES, FIELD_NAME
   }
 
   private interface Arg {}

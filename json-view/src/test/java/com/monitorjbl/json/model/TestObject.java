@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.math.BigDecimal;
 import java.net.URI;
@@ -46,6 +47,8 @@ public class TestObject implements TestInterface {
   private Class cls;
   private BigDecimal bigDecimal;
   private CustomType custom;
+  @JsonSerialize(using = CustomTypeSerializer.class)
+  private CustomType customFieldSerializer;
   private ZonedDateTime zonedDateTime;
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
   private ZonedDateTime formattedZonedDateTime;
@@ -253,6 +256,14 @@ public class TestObject implements TestInterface {
 
   public void setFormattedZonedDateTime(ZonedDateTime formattedZonedDateTime) {
     this.formattedZonedDateTime = formattedZonedDateTime;
+  }
+
+  public CustomType getCustomFieldSerializer() {
+    return customFieldSerializer;
+  }
+
+  public void setCustomFieldSerializer(CustomType customFieldSerializer) {
+    this.customFieldSerializer = customFieldSerializer;
   }
 
   public String getJsonProp() {

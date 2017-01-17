@@ -175,7 +175,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         jgen.writeString(obj.toString());
       } else if(obj instanceof URI) {
         jgen.writeString(obj.toString());
-      } else if (obj instanceof UUID){
+      } else if(obj instanceof UUID) {
         jgen.writeString(obj.toString());
       } else if(obj instanceof Class) {
         jgen.writeString(((Class) obj).getCanonicalName());
@@ -288,6 +288,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       return true;
     }
 
+    @SuppressWarnings("unchecked")
     void writeObject(Object obj) throws IOException {
       jgen.writeStartObject();
 
@@ -299,11 +300,15 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             field.setAccessible(true);
             Object val = field.get(obj);
 
+            //if the field has a serializer annotation on it, serialize with it
             if(valueAllowed(val, obj.getClass()) && fieldAllowed(field, obj.getClass())) {
               String name = getFieldName(field);
               jgen.writeFieldName(name);
 
-              if(customSerializersMap != null && val != null) {
+              JsonSerializer fieldSerializer = annotatedWithJsonSerialize(field);
+              if(fieldSerializer != null) {
+                fieldSerializer.serialize(val, jgen, serializerProvider);
+              } else if(customSerializersMap != null && val != null) {
                 JsonSerializer<Object> serializer = customSerializersMap.get(val.getClass());
                 if(serializer != null) {
                   serializer.serialize(val, jgen, serializerProvider);
@@ -315,7 +320,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
               }
             }
           } catch(IllegalArgumentException | IllegalAccessException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
           }
         }
         cls = cls.getSuperclass();
@@ -497,6 +502,22 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             (classIgnoreProperties != null && Arrays.asList(classIgnoreProperties.value()).contains(f.getName())) ||
             (fieldIgnoreProperties != null && Arrays.asList(fieldIgnoreProperties.value()).contains(f.getName())) ||
             backReferenced;
+      });
+    }
+
+    JsonSerializer annotatedWithJsonSerialize(Field f) {
+      return memoizer.serializeAnnotations(f, () -> {
+        JsonSerialize jsonSerialize = getAnnotation(f, JsonSerialize.class);
+        if(jsonSerialize != null) {
+          if(!jsonSerialize.using().equals(JsonSerializer.None.class)) {
+            try {
+              return jsonSerialize.using().newInstance();
+            } catch(InstantiationException | IllegalAccessException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        }
+        return null;
       });
     }
 

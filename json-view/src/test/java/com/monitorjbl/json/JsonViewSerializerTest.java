@@ -297,7 +297,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-    ));
+                                       ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, match()
@@ -322,7 +322,7 @@ public class JsonViewSerializerTest {
     ref.setMapWithIntKeys(ImmutableMap.of(
         1, "red",
         2, "green"
-    ));
+                                         ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, match()
@@ -408,7 +408,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-    ));
+                                       ));
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
@@ -433,7 +433,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-    ));
+                                       ));
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
@@ -845,5 +845,21 @@ public class JsonViewSerializerTest {
 
     assertNotNull(obj.get("uuid"));
     assertEquals(ref.getUuid().toString(), obj.get("uuid"));
+  }
+
+  @Test
+  public void testJsonSerializeAnnotation() throws Exception {
+    TestObject ref = new TestObject();
+    CustomType custom = new CustomType(5l, "hello");
+    ref.setCustomFieldSerializer(custom);
+
+    sut = new ObjectMapper().registerModule(new JsonViewModule(serializer));
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNotNull(obj.get("customFieldSerializer"));
+    assertTrue(obj.get("customFieldSerializer") instanceof String);
+    assertEquals(obj.get("customFieldSerializer"), "5[hello]");
   }
 }
