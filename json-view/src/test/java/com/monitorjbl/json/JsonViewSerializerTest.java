@@ -271,6 +271,26 @@ public class JsonViewSerializerTest {
   }
 
   @Test
+  public void testListOfSubobjects_fieldSpecific() throws IOException {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    ref.setListOfObjects(asList(new TestSubobject("test1"), new TestSubobject("test2", new TestSubobject("test3"))));
+    String serialized = sut.writeValueAsString(
+        JsonView.with(ref)
+            .onClass(TestObject.class, match()
+                .exclude("listOfObjects.val")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals(ref.getInt1(), obj.get("int1"));
+    assertTrue(obj.get("listOfObjects") instanceof List);
+    List<Map<String, Object>> list = (List<Map<String, Object>>) obj.get("listOfObjects");
+    assertEquals(2, list.size());
+    assertNull(list.get(0).get("val"));
+    assertNull(list.get(1).get("val"));
+    assertNotNull(list.get(1).get("sub"));
+  }
+
+  @Test
   public void testMapOfSubobjects() throws IOException {
     TestObject ref = new TestObject();
     ref.setInt1(1);
