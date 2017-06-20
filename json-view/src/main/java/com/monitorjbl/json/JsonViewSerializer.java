@@ -33,6 +33,9 @@ import java.util.Stack;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import static com.monitorjbl.json.MatcherBehavior.CLASS_FIRST;
+import static com.monitorjbl.json.MatcherBehavior.PATH_FIRST;
+
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
   /**
@@ -44,6 +47,8 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
    * Map of custom serializers to take into account when serializing fields.
    */
   private Map<Class<?>, JsonSerializer<Object>> customSerializersMap = null;
+
+  private MatcherBehavior defaultMatcherBehavior = CLASS_FIRST;
 
   public JsonViewSerializer() {
     this(1024);
@@ -95,6 +100,15 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
   }
 
+  /**
+   * Set the default matcher behavior to be used if the {@link JsonView} object to
+   * be serialized does not specify one.
+   *
+   * @param defaultMatcherBehavior The default behavior to use
+   */
+  public void setDefaultMatcherBehavior(MatcherBehavior defaultMatcherBehavior) {
+    this.defaultMatcherBehavior = defaultMatcherBehavior;
+  }
 
   @Override
   public void serialize(JsonView result, JsonGenerator jgen, SerializerProvider serializers) throws IOException {
@@ -339,14 +353,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     @SuppressWarnings("unchecked")
-    boolean fieldAllowed(Field field, Class declaringClass) {
-      String name = field.getName();
-      String prefix = currentPath.length() > 0 ? currentPath + "." : "";
-      if(Modifier.isStatic(field.getModifiers())) {
-        return false;
-      }
-
-      //search for matching class
+    private Match classMatchSearch(Class declaringClass) {
       Match match = null;
       Class cls = declaringClass;
       while(!cls.equals(Object.class) && match == null) {
@@ -363,10 +370,39 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         }
         cls = cls.getSuperclass();
       }
-      if(match == null) {
-        match = currentMatch;
-      } else {
-        prefix = "";
+      return match;
+    }
+
+    @SuppressWarnings("unchecked")
+    boolean fieldAllowed(Field field, Class declaringClass) {
+      String name = field.getName();
+      String prefix = currentPath.length() > 0 ? currentPath + "." : "";
+      if(Modifier.isStatic(field.getModifiers())) {
+        return false;
+      }
+
+      // Determine matcher behavior
+      MatcherBehavior currentBehavior = result.matcherBehavior;
+      if(currentBehavior == null) {
+        currentBehavior = JsonViewSerializer.this.defaultMatcherBehavior;
+      }
+
+      //search for matching class
+      Match match = null;
+      if(currentBehavior == CLASS_FIRST) {
+        match = classMatchSearch(declaringClass);
+        if(match == null) {
+          match = currentMatch;
+        } else {
+          prefix = "";
+        }
+      } else if(currentBehavior == PATH_FIRST) {
+        if(currentMatch != null) {
+          match = currentMatch;
+        } else {
+          match = classMatchSearch(declaringClass);
+          prefix = "";
+        }
       }
 
       //if there is a match, respect it

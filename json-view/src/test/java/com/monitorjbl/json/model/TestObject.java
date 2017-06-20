@@ -57,6 +57,7 @@ public class TestObject implements TestInterface {
   @JsonProperty
   private String jsonPropNoValue;
   private UUID uuid;
+  private TestObject recursion;
 
   public String getStr1() {
     return str1;
@@ -288,5 +289,13 @@ public class TestObject implements TestInterface {
 
   public void setUuid(UUID uuid) {
     this.uuid = uuid;
+  }
+
+  public TestObject getRecursion() {
+    return recursion;
+  }
+
+  public void setRecursion(TestObject recursion) {
+    this.recursion = recursion;
   }
 }

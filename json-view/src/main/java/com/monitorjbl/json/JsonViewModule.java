@@ -18,8 +18,14 @@ public class JsonViewModule extends SimpleModule {
     this.jsonView = jsonView;
   }
 
+  public JsonViewModule withDefaultMatcherBehavior(MatcherBehavior matcherBehavior){
+    this.jsonView.setDefaultMatcherBehavior(matcherBehavior);
+    return this;
+  }
+
   public <E> JsonViewModule registerSerializer(Class<E> cls, JsonSerializer<E> serializer) {
     jsonView.registerCustomSerializer(cls, serializer);
     return this;
   }
+
 }

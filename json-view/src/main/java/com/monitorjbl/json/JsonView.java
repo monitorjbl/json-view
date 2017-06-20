@@ -9,6 +9,7 @@ import java.util.Map;
 public class JsonView<T> {
   protected final T value;
   protected final Map<Class<?>, Match> matches = new HashMap<>();
+  protected MatcherBehavior matcherBehavior;
 
   protected JsonView(T value) {
     this.value = value;
@@ -24,6 +25,11 @@ public class JsonView<T> {
 
   public JsonView<T> onClass(Class<?> cls, Match match) {
     matches.put(cls, match);
+    return this;
+  }
+
+  public JsonView<T> withMatcherBehavior(MatcherBehavior matcherBehavior) {
+    this.matcherBehavior = matcherBehavior;
     return this;
   }
 

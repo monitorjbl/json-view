@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static com.monitorjbl.json.Match.match;
 import static java.util.Arrays.asList;
@@ -861,5 +862,53 @@ public class JsonViewSerializerTest {
     assertNotNull(obj.get("customFieldSerializer"));
     assertTrue(obj.get("customFieldSerializer") instanceof String);
     assertEquals(obj.get("customFieldSerializer"), "5[hello]");
+  }
+
+  @Test
+  public void testPathFirstMatch_defaultBehavior() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    ref.setStr1("sdfdsf");
+    ref.setStr2("erer");
+    ref.setRecursion(ref);
+
+    Consumer<Map<String, Object>> doTest = obj->{
+      assertEquals(ref.getInt1(), obj.get("int1"));
+      assertEquals(ref.getStr1(), obj.get("str1"));
+      assertEquals(ref.getStr2(), obj.get("str2"));
+      assertNotNull(obj.get("recursion"));
+
+      Map<String, Object> rec1 = (Map<String, Object>) obj.get("recursion");
+      assertNotNull(rec1.get("recursion"));
+      assertEquals(ref.getStr1(), rec1.get("str1"));
+      assertNull(rec1.get("str2"));
+      assertNull(rec1.get("int1"));
+
+      Map<String, Object> rec2 = (Map<String, Object>) rec1.get("recursion");
+      assertEquals(ref.getStr2(), rec2.get("str2"));
+      assertNull(rec2.get("str1"));
+      assertNull(rec2.get("int1"));
+
+      assertNull(rec2.get("recursion"));
+    };
+
+
+    // Perform test with behavior set at default level
+    sut = new ObjectMapper().registerModule(new JsonViewModule(serializer)
+        .withDefaultMatcherBehavior(MatcherBehavior.PATH_FIRST));
+    String serialized = sut.writeValueAsString(JsonView.with(ref)
+        .onClass(TestObject.class, match()
+            .include("recursion", "recursion.str1", "recursion.recursion.str2", "str1", "str2", "int1")
+            .exclude("*")));
+    doTest.accept(sut.readValue(serialized, HashMap.class));
+
+    // Perform test with behavior set at the JsonView level
+    sut = new ObjectMapper().registerModule(new JsonViewModule(serializer));
+    serialized = sut.writeValueAsString(JsonView.with(ref)
+        .withMatcherBehavior(MatcherBehavior.PATH_FIRST)
+        .onClass(TestObject.class, match()
+            .include("recursion", "recursion.str1", "recursion.recursion.str2", "str1", "str2", "int1")
+            .exclude("*")));
+    doTest.accept(sut.readValue(serialized, HashMap.class));
   }
 }
