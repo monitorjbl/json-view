@@ -312,10 +312,14 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         for(Field field : fields) {
           try {
             field.setAccessible(true);
-            Object val = field.get(obj);
 
             //if the field has a serializer annotation on it, serialize with it
-            if(valueAllowed(val, obj.getClass()) && fieldAllowed(field, obj.getClass())) {
+            if(fieldAllowed(field, obj.getClass())) {
+              Object val = readField(obj, field);
+              if(!valueAllowed(val, obj.getClass())) {
+                continue;
+              }
+
               String name = getFieldName(field);
               jgen.writeFieldName(name);
 
@@ -376,34 +380,13 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     @SuppressWarnings("unchecked")
     boolean fieldAllowed(Field field, Class declaringClass) {
       String name = field.getName();
-      String prefix = currentPath.length() > 0 ? currentPath + "." : "";
       if(Modifier.isStatic(field.getModifiers())) {
         return false;
       }
 
-      // Determine matcher behavior
-      MatcherBehavior currentBehavior = result.matcherBehavior;
-      if(currentBehavior == null) {
-        currentBehavior = JsonViewSerializer.this.defaultMatcherBehavior;
-      }
-
-      //search for matching class
-      Match match = null;
-      if(currentBehavior == CLASS_FIRST) {
-        match = classMatchSearch(declaringClass);
-        if(match == null) {
-          match = currentMatch;
-        } else {
-          prefix = "";
-        }
-      } else if(currentBehavior == PATH_FIRST) {
-        if(currentMatch != null) {
-          match = currentMatch;
-        } else {
-          match = classMatchSearch(declaringClass);
-          prefix = "";
-        }
-      }
+      MatchPrefixTuple tuple = getMatchPrefix(declaringClass);
+      String prefix = tuple.prefix;
+      Match match = tuple.match;
 
       //if there is a match, respect it
       if(match != null) {
@@ -434,6 +417,45 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       } else {
         //else, respect JsonIgnore only
         return !annotatedWithIgnore(field);
+      }
+    }
+
+    MatchPrefixTuple getMatchPrefix(Class declaringClass) {
+      String prefix = currentPath.length() > 0 ? currentPath + "." : "";
+
+      // Determine matcher behavior
+      MatcherBehavior currentBehavior = result.matcherBehavior;
+      if(currentBehavior == null) {
+        currentBehavior = JsonViewSerializer.this.defaultMatcherBehavior;
+      }
+
+      //search for matching class
+      Match match = null;
+      if(currentBehavior == CLASS_FIRST) {
+        match = classMatchSearch(declaringClass);
+        if(match == null) {
+          match = currentMatch;
+        } else {
+          prefix = "";
+        }
+      } else if(currentBehavior == PATH_FIRST) {
+        if(currentMatch != null) {
+          match = currentMatch;
+        } else {
+          match = classMatchSearch(declaringClass);
+          prefix = "";
+        }
+      }
+
+      return new MatchPrefixTuple(match, prefix);
+    }
+
+    Object readField(Object obj, Field field) throws IllegalAccessException {
+      MatchPrefixTuple tuple = getMatchPrefix(obj.getClass());
+      if(tuple.match != null && tuple.match.getTransforms().containsKey(tuple.prefix + field.getName())) {
+        return tuple.match.getTransforms().get(tuple.prefix + field.getName()).apply(obj, field.get(obj));
+      } else {
+        return field.get(obj);
       }
     }
 
@@ -618,6 +640,16 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         }
       }
       return map;
+    }
+  }
+
+  private static class MatchPrefixTuple {
+    private final Match match;
+    private final String prefix;
+
+    public MatchPrefixTuple(Match match, String prefix) {
+      this.match = match;
+      this.prefix = prefix;
     }
   }
 }

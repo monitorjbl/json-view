@@ -298,7 +298,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-                                       ));
+    ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, match()
@@ -323,7 +323,7 @@ public class JsonViewSerializerTest {
     ref.setMapWithIntKeys(ImmutableMap.of(
         1, "red",
         2, "green"
-                                         ));
+    ));
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
             .onClass(TestObject.class, match()
@@ -409,7 +409,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-                                       ));
+    ));
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
@@ -434,7 +434,7 @@ public class JsonViewSerializerTest {
     ref.setMapOfObjects(ImmutableMap.of(
         "key1", new TestSubobject("test1"),
         "key2", new TestSubobject("test2", new TestSubobject("test3"))
-                                       ));
+    ));
 
     String serialized = sut.writeValueAsString(
         JsonView.with(ref)
@@ -872,7 +872,7 @@ public class JsonViewSerializerTest {
     ref.setStr2("erer");
     ref.setRecursion(ref);
 
-    Consumer<Map<String, Object>> doTest = obj->{
+    Consumer<Map<String, Object>> doTest = obj -> {
       assertEquals(ref.getInt1(), obj.get("int1"));
       assertEquals(ref.getStr1(), obj.get("str1"));
       assertEquals(ref.getStr2(), obj.get("str2"));
@@ -910,5 +910,28 @@ public class JsonViewSerializerTest {
             .include("recursion", "recursion.str1", "recursion.recursion.str2", "str1", "str2", "int1")
             .exclude("*")));
     doTest.accept(sut.readValue(serialized, HashMap.class));
+  }
+
+  @Test
+  public void testFieldTransform() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    ref.setStr1("sdfdsf");
+
+    sut = new ObjectMapper().registerModule(new JsonViewModule(serializer));
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref)
+        .onClass(TestObject.class, match()
+            .exclude("*")
+            .include("str1", "str2")
+            .transform("str1", (TestObject t, String f) -> f.toUpperCase())
+            .transform("str2", (TestObject t, String f) -> t.getStr1())));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertNull(obj.get("int1"));
+    assertNotNull(obj.get("str1"));
+    assertEquals(ref.getStr1().toUpperCase(), obj.get("str1"));
+    assertNotNull(obj.get("str2"));
+    assertEquals(ref.getStr1(), obj.get("str2"));
   }
 }
