@@ -47,6 +47,9 @@ public class Match {
    *
    * @param field       The fields to include
    * @param transformer The function to transform the field. Will be provided with the whole object and the field.
+   * @param <X>         The object being serialized
+   * @param <Y>         The field being serialized
+   * @param <Z>         The value of the field to serialize
    * @return Match
    */
   @SuppressWarnings("unchecked")
