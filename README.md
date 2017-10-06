@@ -16,6 +16,7 @@ While the declarative style certainly has many benefits (compile-time checking, 
     * [Wildcard matchers](#wildcard-matchers)
     * [Class matchers](#class-matchers)
   * [Custom Serializers](#custom-serializers)
+  * [Field Transformations](#field-transformations)
   * [Rules](#rules)
 * [Spring Integration](#spring-integration)
   * [Including](#including-1)
@@ -50,7 +51,7 @@ To use it, simply add this project to your classpath using your build tool of ch
 <dependency>
     <groupId>com.monitorjbl</groupId>
     <artifactId>json-view</artifactId>
-    <version>0.15</version>
+    <version>0.16</version>
 </dependency>
 ```
 
@@ -181,6 +182,18 @@ Due to the way json-view works, it must assume that it can serialize any class (
 ObjectMapper mapper = new ObjectMapper().registerModule(new JsonViewModule()
       .registerSerializer(Date.class, new MyCustomDateSerializer())
       .registerSerializer(URL.class, new MyCustomURLSerializer()));
+```
+
+## Field Transformations
+
+If you have a field that needs to be transformed in a programatic way, there are ways to do so [inside Jackson](https://stackoverflow.com/a/12046979). These are generally intended to be static transformations, and while they can be used in a dynamic way, they often are simply painful to use. json-view can be used to dynamically perform transforms with lambdas:
+
+```java
+JsonView.with(ref)
+        .onClass(TestObject.class, match()
+            .exclude("*")
+            .include("str1")
+            .transform("str1", (TestObject t, String f) -> f.toUpperCase()))
 ```
 
 ## Rules
@@ -361,6 +374,6 @@ Once you've done this, you can refer to the latest version of the library in you
 <dependency>
   <groupId>com.monitorjbl</groupId>
   <artifactId>json-view</artifactId>
-  <version>0.16-SNAPSHOT</version>
+  <version>0.17-SNAPSHOT</version>
 </dependency>
 ```
