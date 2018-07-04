@@ -1,10 +1,13 @@
 package com.monitorjbl.json.model;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import java.util.List;
 
+@JsonAutoDetect(fieldVisibility = Visibility.ANY)
 public class TestBackreferenceObject {
 
   private String id;
@@ -28,6 +31,7 @@ public class TestBackreferenceObject {
     this.children = children;
   }
 
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY)
   public static class TestForwardReferenceObject{
     private String id;
     @JsonManagedReference

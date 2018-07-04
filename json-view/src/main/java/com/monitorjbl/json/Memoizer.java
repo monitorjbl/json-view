@@ -1,16 +1,17 @@
 package com.monitorjbl.json;
 
-import java.lang.reflect.Field;
+import com.monitorjbl.json.JsonViewSerializer.AccessibleProperty;
+
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-import static com.monitorjbl.json.Memoizer.FunctionCache.FIELD_NAME;
+import static com.monitorjbl.json.Memoizer.FunctionCache.ACCESSIBLE_PROPERTY;
 import static com.monitorjbl.json.Memoizer.FunctionCache.IGNORE_ANNOTATIONS;
 import static com.monitorjbl.json.Memoizer.FunctionCache.MATCHES;
-import static com.monitorjbl.json.Memoizer.FunctionCache.SERIALIZE_ANNOTATIONS;
 
 @SuppressWarnings("unchecked")
 class Memoizer {
@@ -24,20 +25,16 @@ class Memoizer {
     }
   }
 
-  public <T> T ignoreAnnotations(Field f, Supplier<T> compute) {
-    return (T) fitToMaxSize(IGNORE_ANNOTATIONS).computeIfAbsent(new MonoArg(f), (k) -> compute.get());
-  }
-
-  public <T> T serializeAnnotations(Field f, Supplier<T> compute) {
-    return (T) fitToMaxSize(SERIALIZE_ANNOTATIONS).computeIfAbsent(new MonoArg(f), (k) -> compute.get());
-  }
-
   public <T> T matches(Set<String> values, String pattern, boolean matchPrefix, Supplier<T> compute) {
     return (T) fitToMaxSize(MATCHES).computeIfAbsent(new TriArg(values, pattern, matchPrefix), (k) -> compute.get());
   }
 
-  public <T> T fieldName(Field f, Supplier<T> compute) {
-    return (T) fitToMaxSize(FIELD_NAME).computeIfAbsent(new MonoArg(f), (k) -> compute.get());
+  public <T> T annotatedWithIgnore(AccessibleProperty property, Supplier<T> compute) {
+    return (T) fitToMaxSize(IGNORE_ANNOTATIONS).computeIfAbsent(new MonoArg(property), (k) -> compute.get());
+  }
+
+  public <T> T accessibleProperty(Class cls, Supplier<T> compute) {
+    return (T) fitToMaxSize(ACCESSIBLE_PROPERTY).computeIfAbsent(new MonoArg(cls), (k) -> compute.get());
   }
 
   private Map<Arg, Object> fitToMaxSize(FunctionCache key) {
@@ -49,7 +46,7 @@ class Memoizer {
   }
 
   enum FunctionCache {
-    IGNORE_ANNOTATIONS, SERIALIZE_ANNOTATIONS, MATCHES, FIELD_NAME
+    IGNORE_ANNOTATIONS, MATCHES, ACCESSIBLE_PROPERTY
   }
 
   private interface Arg {}
@@ -71,6 +68,30 @@ class Memoizer {
     @Override
     public int hashCode() {
       return arg1 != null ? arg1.hashCode() : 0;
+    }
+  }
+
+  private class BiArg implements Arg {
+    private final Object arg1;
+    private final Object arg2;
+
+    public BiArg(Object arg1, Object arg2) {
+      this.arg1 = arg1;
+      this.arg2 = arg2;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if(this == o) return true;
+      if(o == null || getClass() != o.getClass()) return false;
+      BiArg biArg = (BiArg) o;
+      return Objects.equals(arg1, biArg.arg1) &&
+          Objects.equals(arg2, biArg.arg2);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(arg1, arg2);
     }
   }
 

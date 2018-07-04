@@ -1,5 +1,6 @@
 package com.monitorjbl.json;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -23,18 +24,24 @@ import java.net.URI;
 import java.net.URL;
 import java.time.temporal.Temporal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static com.monitorjbl.json.MatcherBehavior.CLASS_FIRST;
 import static com.monitorjbl.json.MatcherBehavior.PATH_FIRST;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toSet;
 
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
@@ -119,7 +126,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     Stack<String> path = new Stack<>();
     String currentPath = "";
     Match currentMatch = null;
-    Field referringField = null;
+    AccessibleProperty referringField = null;
 
     final SerializerProvider serializerProvider;
     final JsonGenerator jgen;
@@ -141,7 +148,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
     //internal use only to encapsulate what the current state was
     private JsonWriter(JsonGenerator jgen, JsonView result, Match currentMatch,
-                       String currentPath, Stack<String> path, Field referringField, SerializerProvider serializerProvider) {
+                       String currentPath, Stack<String> path, AccessibleProperty referringField, SerializerProvider serializerProvider) {
       this.jgen = jgen;
       this.result = result;
       this.currentMatch = currentMatch;
@@ -280,7 +287,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
           ((List<Boolean>) iter).add(v);
         }
       } else {
-        iter = Arrays.asList((Object[]) obj);
+        iter = asList((Object[]) obj);
       }
       return iter;
     }
@@ -308,22 +315,21 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
       Class cls = obj.getClass();
       while(!cls.equals(Object.class)) {
-        Field[] fields = getDeclaredFields(cls);
-        for(Field field : fields) {
-          try {
-            field.setAccessible(true);
+        Set<AccessibleProperty> fields = getAccessibleProperties(cls);
 
+        for(AccessibleProperty property : fields) {
+          try {
             //if the field has a serializer annotation on it, serialize with it
-            if(fieldAllowed(field, obj.getClass())) {
-              Object val = readField(obj, field);
+            if(fieldAllowed(property, obj.getClass())) {
+              Object val = readField(obj, property);
               if(!valueAllowed(val, obj.getClass())) {
                 continue;
               }
 
-              String name = getFieldName(field);
+              String name = getFieldName(property);
               jgen.writeFieldName(name);
 
-              JsonSerializer fieldSerializer = annotatedWithJsonSerialize(field);
+              JsonSerializer fieldSerializer = annotatedWithJsonSerialize(property);
               if(fieldSerializer != null) {
                 fieldSerializer.serialize(val, jgen, serializerProvider);
               } else if(customSerializersMap != null && val != null) {
@@ -331,10 +337,10 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
                 if(serializer != null) {
                   serializer.serialize(val, jgen, serializerProvider);
                 } else {
-                  new JsonWriter(jgen, result, currentMatch, currentPath, path, field, serializerProvider).write(name, val);
+                  new JsonWriter(jgen, result, currentMatch, currentPath, path, property, serializerProvider).write(name, val);
                 }
               } else {
-                new JsonWriter(jgen, result, currentMatch, currentPath, path, field, serializerProvider).write(name, val);
+                new JsonWriter(jgen, result, currentMatch, currentPath, path, property, serializerProvider).write(name, val);
               }
             }
           } catch(IllegalArgumentException | IllegalAccessException e) {
@@ -378,9 +384,9 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     @SuppressWarnings("unchecked")
-    boolean fieldAllowed(Field field, Class declaringClass) {
-      String name = field.getName();
-      if(Modifier.isStatic(field.getModifiers())) {
+    boolean fieldAllowed(AccessibleProperty property, Class declaringClass) {
+      String name = property.name;
+      if(Modifier.isStatic(property.modifiers)) {
         return false;
       }
 
@@ -412,11 +418,11 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         } else if(excluded == 0) {
           return false;
         } else {
-          return !annotatedWithIgnore(field);
+          return !annotatedWithIgnore(property);
         }
       } else {
         //else, respect JsonIgnore only
-        return !annotatedWithIgnore(field);
+        return !annotatedWithIgnore(property);
       }
     }
 
@@ -450,10 +456,10 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       return new MatchPrefixTuple(match, prefix);
     }
 
-    Object readField(Object obj, Field field) throws IllegalAccessException {
+    Object readField(Object obj, AccessibleProperty field) throws IllegalAccessException {
       MatchPrefixTuple tuple = getMatchPrefix(obj.getClass());
-      if(tuple.match != null && tuple.match.getTransforms().containsKey(tuple.prefix + field.getName())) {
-        return tuple.match.getTransforms().get(tuple.prefix + field.getName()).apply(obj, field.get(obj));
+      if(tuple.match != null && tuple.match.getTransforms().containsKey(tuple.prefix + field.name)) {
+        return tuple.match.getTransforms().get(tuple.prefix + field.name).apply(obj, field.get(obj));
       } else {
         return field.get(obj);
       }
@@ -533,10 +539,10 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
      * Returns a boolean indicating whether the provided field is annotated with
      * some form of ignore. This method is memoized to speed up execution time
      */
-    boolean annotatedWithIgnore(Field f) {
-      return memoizer.ignoreAnnotations(f, () -> {
+    boolean annotatedWithIgnore(AccessibleProperty f) {
+      return memoizer.annotatedWithIgnore(f, () -> {
         JsonIgnore jsonIgnore = getAnnotation(f, JsonIgnore.class);
-        JsonIgnoreProperties classIgnoreProperties = getAnnotation(f.getDeclaringClass(), JsonIgnoreProperties.class);
+        JsonIgnoreProperties classIgnoreProperties = getAnnotation(f.declaringClass, JsonIgnoreProperties.class);
         JsonIgnoreProperties fieldIgnoreProperties = null;
         boolean backReferenced = false;
 
@@ -547,9 +553,9 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
         //make sure the referring field didn't specify a backreference annotation
         if(getAnnotation(f, JsonBackReference.class) != null && referringField != null) {
-          for(Field lastField : getDeclaredFields(referringField.getDeclaringClass())) {
+          for(AccessibleProperty lastField : getAccessibleProperties(referringField.declaringClass)) {
             JsonManagedReference fieldManagedReference = getAnnotation(lastField, JsonManagedReference.class);
-            if(fieldManagedReference != null && lastField.getType().equals(f.getDeclaringClass())) {
+            if(fieldManagedReference != null && lastField.type.equals(f.declaringClass)) {
               backReferenced = true;
               break;
             }
@@ -557,53 +563,76 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         }
 
         return (jsonIgnore != null && jsonIgnore.value()) ||
-            (classIgnoreProperties != null && Arrays.asList(classIgnoreProperties.value()).contains(f.getName())) ||
-            (fieldIgnoreProperties != null && Arrays.asList(fieldIgnoreProperties.value()).contains(f.getName())) ||
+            (classIgnoreProperties != null && asList(classIgnoreProperties.value()).contains(f.name)) ||
+            (fieldIgnoreProperties != null && asList(fieldIgnoreProperties.value()).contains(f.name)) ||
             backReferenced;
       });
     }
 
-    JsonSerializer annotatedWithJsonSerialize(Field f) {
-      return memoizer.serializeAnnotations(f, () -> {
-        JsonSerialize jsonSerialize = getAnnotation(f, JsonSerialize.class);
-        if(jsonSerialize != null) {
-          if(!jsonSerialize.using().equals(JsonSerializer.None.class)) {
-            try {
-              return jsonSerialize.using().newInstance();
-            } catch(InstantiationException | IllegalAccessException e) {
-              throw new RuntimeException(e);
-            }
+    JsonSerializer annotatedWithJsonSerialize(AccessibleProperty property) {
+      JsonSerialize jsonSerialize = getAnnotation(property, JsonSerialize.class);
+      if(jsonSerialize != null) {
+        if(!jsonSerialize.using().equals(JsonSerializer.None.class)) {
+          try {
+            return jsonSerialize.using().newInstance();
+          } catch(InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
           }
         }
-        return null;
-      });
+      }
+      return null;
     }
 
     private Class<?>[] getInterfaces(Class cls) {
       return cls.getInterfaces();
     }
 
-    private Field[] getDeclaredFields(Class cls) {
-      return cls.getDeclaredFields();
+    private Set<AccessibleProperty> getAccessibleProperties(Class cls) {
+      return memoizer.accessibleProperty(cls, () -> {
+        // Gather all fields and methods
+        Map<String, AccessibleProperty> accessibleProperties = new HashMap<>();
+        Predicate<Field> shouldProcessField = fieldVisibilityAllowed(cls);
+        Predicate<Method> shouldProcessMethod = getterVisibilityAllowed(cls);
+        Predicate<Object> visible = (o) -> {
+          if(o instanceof Field) {
+            return shouldProcessField.test((Field) o);
+          } else if(o instanceof Method) {
+            return shouldProcessMethod.test((Method) o);
+          } else {
+            throw new RuntimeException("Could not process property of type " + o.getClass());
+          }
+        };
+
+        Stream.of(cls.getDeclaredFields())
+            .map(f -> new AccessibleProperty(cls, f.getName(), f.getAnnotations(), f))
+            .forEach(p -> accessibleProperties.put(p.name, p));
+        Stream.of(cls.getDeclaredMethods())
+            .filter(m -> m.getName().startsWith("get") && !m.getReturnType().equals(Void.class) && m.getParameters().length == 0)
+            .map(m -> new AccessibleProperty(cls, getFieldNameFromGetter(m), m.getAnnotations(), m))
+            .forEach(p -> {
+              AccessibleProperty field = accessibleProperties.get(p.name);
+
+              // Combine annotations from the getter and the field
+              if(field != null) {
+                Set<Annotation> annotations = new HashSet<Annotation>(asList(field.annotations));
+                annotations.addAll(asList(p.annotations));
+                p = new AccessibleProperty(p.declaringClass, p.name, annotations.toArray(new Annotation[0]), p.property);
+              }
+
+              // TODO: Makes sure combined annotations are applied to the field when method visibility is disallowed
+              if(shouldProcessMethod.test((Method) p.property)) {
+                accessibleProperties.put(p.name, p);
+              }
+            });
+
+        return accessibleProperties.values().stream()
+            .filter(p -> visible.test(p.property))
+            .collect(toSet());
+      });
     }
 
     private Annotation[] getAnnotations(Class cls) {
       return cls.getAnnotations();
-    }
-
-    private Annotation[] getAnnotations(Field field) {
-      return field.getAnnotations();
-    }
-
-    private String getFieldName(Field field) {
-      return memoizer.fieldName(field, () -> {
-        JsonProperty jsonProperty = field.getAnnotation(JsonProperty.class);
-        if(jsonProperty != null && jsonProperty.value().length() > 0) {
-          return jsonProperty.value();
-        } else {
-          return field.getName();
-        }
-      });
     }
 
     @SuppressWarnings("unchecked")
@@ -620,10 +649,9 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends Annotation> T getAnnotation(Field field, Class<T> annotation) {
-      Annotation[] annotations = getAnnotations(field);
-      if(annotations != null) {
-        for(Annotation a : annotations) {
+    private <T extends Annotation> T getAnnotation(AccessibleProperty property, Class<T> annotation) {
+      if(property.annotations != null) {
+        for(Annotation a : property.annotations) {
           if(a.annotationType().equals(annotation)) {
             return (T) a;
           }
@@ -632,15 +660,68 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       return null;
     }
 
-    //synchronizes on the provided map to provide threadsafety
-    private <T, V> Map<T, V> fitToMaxSize(Map<T, V> map) {
-      synchronized (map) {
-        if(map.size() > 1) {
-          map.remove(map.keySet().iterator().next());
+    private Predicate<Field> fieldVisibilityAllowed(Class cls) {
+      JsonAutoDetect autoDetect = getAnnotation(cls, JsonAutoDetect.class);
+
+      if(autoDetect == null) {
+        return f -> false;
+      } else {
+        switch(autoDetect.fieldVisibility()) {
+          case ANY:
+            return f -> true;
+          case PUBLIC_ONLY:
+            return f -> Modifier.isPublic(f.getModifiers());
+          case PROTECTED_AND_PUBLIC:
+            return f -> Modifier.isPublic(f.getModifiers()) || Modifier.isProtected(f.getModifiers());
+          case NON_PRIVATE:
+            return f -> !Modifier.isPrivate(f.getModifiers());
+          case DEFAULT:
+          case NONE:
+            return f -> false;
+          default:
+            throw new RuntimeException("No support for field visibility " + autoDetect.fieldVisibility());
         }
       }
-      return map;
     }
+
+    private Predicate<Method> getterVisibilityAllowed(Class cls) {
+      JsonAutoDetect autoDetect = getAnnotation(cls, JsonAutoDetect.class);
+
+      if(autoDetect == null) {
+        return m -> true;
+      } else {
+        switch(autoDetect.getterVisibility()) {
+          case DEFAULT:
+          case ANY:
+            return m -> true;
+          case PUBLIC_ONLY:
+            return m -> Modifier.isPublic(m.getModifiers());
+          case PROTECTED_AND_PUBLIC:
+            return m -> Modifier.isPublic(m.getModifiers()) || Modifier.isProtected(m.getModifiers());
+          case NON_PRIVATE:
+            return m -> !Modifier.isPrivate(m.getModifiers());
+          case NONE:
+            return m -> false;
+          default:
+            throw new RuntimeException("No support for field visibility " + autoDetect.fieldVisibility());
+        }
+      }
+    }
+
+    private String getFieldName(AccessibleProperty property) {
+      JsonProperty jsonProperty = getAnnotation(property, JsonProperty.class);
+      if(jsonProperty != null && jsonProperty.value().length() > 0) {
+        return jsonProperty.value();
+      } else {
+        return property.name;
+      }
+    }
+
+    private String getFieldNameFromGetter(Method method) {
+      String name = method.getName().replace("get", "");
+      return name.substring(0, 1).toLowerCase() + name.substring(1);
+    }
+
   }
 
   private static class MatchPrefixTuple {
@@ -650,6 +731,77 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     public MatchPrefixTuple(Match match, String prefix) {
       this.match = match;
       this.prefix = prefix;
+    }
+  }
+
+  static class AccessibleProperty {
+    public final Class declaringClass;
+    public final String name;
+    public final Class type;
+    public final Annotation[] annotations;
+    public final int modifiers;
+    public final Object property;
+    private final Function<Object, Object> getter;
+
+    public AccessibleProperty(Class declaringClass, String name, Annotation[] annotations, Object property) {
+      this.declaringClass = declaringClass;
+      this.name = name;
+      this.annotations = annotations;
+      this.property = property;
+
+      if(property instanceof Field) {
+        this.type = ((Field) property).getType();
+        this.modifiers = ((Field) property).getModifiers();
+        this.getter = this::getFromField;
+      } else if(property instanceof Method) {
+        this.type = ((Method) property).getReturnType();
+        this.modifiers = ((Method) property).getModifiers();
+        this.getter = this::getFromMethod;
+      } else {
+        throw new RuntimeException("Unable to access property from " + property);
+      }
+    }
+
+    public Object get(Object obj) {
+      return getter.apply(obj);
+    }
+
+    private Object getFromField(Object obj) {
+      try {
+        ((Field) property).setAccessible(true);
+        return ((Field) property).get(obj);
+      } catch(IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    private Object getFromMethod(Object obj) {
+      try {
+        ((Method) property).setAccessible(true);
+        return ((Method) property).invoke(obj);
+      } catch(IllegalAccessException | InvocationTargetException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if(this == o) return true;
+      if(o == null || getClass() != o.getClass()) return false;
+      AccessibleProperty that = (AccessibleProperty) o;
+      return Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+      return name.hashCode();
+    }
+
+    @Override
+    public String toString() {
+      return "AccessibleProperty{" +
+          "name='" + name + '\'' +
+          '}';
     }
   }
 }

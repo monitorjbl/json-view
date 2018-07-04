@@ -87,12 +87,12 @@ public class WriterTest {
     assertEquals(0, sut.containsMatchingPattern(patterns, "field2.green.name", true));
   }
 
-  @Test
-  public void testAnnotatedWithIgnore() throws Exception {
-    assertTrue(sut.annotatedWithIgnore(TestObject.class.getDeclaredField("ignoredDirect")));
-    assertTrue(sut.annotatedWithIgnore(TestObject.class.getDeclaredField("ignoredIndirect")));
-    assertFalse(sut.annotatedWithIgnore(TestObject.class.getDeclaredField("str1")));
-  }
+//  @Test
+//  public void testAnnotatedWithIgnore() throws Exception {
+//    assertTrue(sut.annotatedWithIgnore(TestObject.class.getDeclaredField("ignoredDirect")));
+//    assertTrue(sut.annotatedWithIgnore(TestObject.class.getDeclaredField("ignoredIndirect")));
+//    assertFalse(sut.annotatedWithIgnore(TestObject.class.getDeclaredField("str1")));
+//  }
 
   @Test
   public void testWritePrimitive_object() throws Exception {

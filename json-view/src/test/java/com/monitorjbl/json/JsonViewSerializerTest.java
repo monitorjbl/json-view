@@ -11,6 +11,10 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.Ints;
 import com.monitorjbl.json.model.CustomType;
 import com.monitorjbl.json.model.CustomTypeSerializer;
+import com.monitorjbl.json.model.TestAutodetect.AutodetectDefault;
+import com.monitorjbl.json.model.TestAutodetect.AutodetectFields;
+import com.monitorjbl.json.model.TestAutodetect.AutodetectGetters;
+import com.monitorjbl.json.model.TestAutodetect.AutodetectNotPresent;
 import com.monitorjbl.json.model.TestBackreferenceObject;
 import com.monitorjbl.json.model.TestBackreferenceObject.TestForwardReferenceObject;
 import com.monitorjbl.json.model.TestChildObject;
@@ -934,4 +938,79 @@ public class JsonViewSerializerTest {
     assertNotNull(obj.get("str2"));
     assertEquals(ref.getStr1(), obj.get("str2"));
   }
+
+  @Test
+  public void testMethodGetters() throws Exception {
+    TestObject ref = new TestObject();
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals("TEST", obj.get("staticValue"));
+  }
+
+  @Test
+  public void testMethodGetters_ignored() throws Exception {
+    TestObject ref = new TestObject();
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertFalse(obj.containsKey("ignoredValue"));
+  }
+
+  @Test
+  public void testMethodGetters_combinesAnnotations() throws Exception {
+    TestObject ref = new TestObject();
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertFalse(obj.containsKey("ignoredDirect"));
+  }
+
+  @Test
+  public void testAutodetect_notPresent() throws Exception {
+    AutodetectNotPresent ref = new AutodetectNotPresent();
+    ref.setId("test");
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals("valid", obj.get("id"));
+  }
+
+  @Test
+  public void testAutodetect_default() throws Exception {
+    AutodetectDefault ref = new AutodetectDefault();
+    ref.setId("test");
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals("valid", obj.get("id"));
+  }
+
+  @Test
+  public void testAutodetect_fieldsOnly() throws Exception {
+    AutodetectFields ref = new AutodetectFields();
+    ref.setId("test");
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals("test", obj.get("id"));
+  }
+
+  @Test
+  public void testAutodetect_methodsOnly() throws Exception {
+    AutodetectGetters ref = new AutodetectGetters();
+    ref.setId("test");
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals("valid", obj.get("id"));
+  }
+
 }

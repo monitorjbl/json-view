@@ -234,7 +234,7 @@ public class TestObject implements TestInterface {
   public void setBigDecimal(BigDecimal bigDecimal) {
     this.bigDecimal = bigDecimal;
   }
-  
+
   public CustomType getCustom() {
     return custom;
   }
@@ -297,5 +297,14 @@ public class TestObject implements TestInterface {
 
   public void setRecursion(TestObject recursion) {
     this.recursion = recursion;
+  }
+
+  public String getStaticValue() {
+    return "TEST";
+  }
+
+  @JsonIgnore
+  public String getIgnoredValue() {
+    return "not_valid";
   }
 }
