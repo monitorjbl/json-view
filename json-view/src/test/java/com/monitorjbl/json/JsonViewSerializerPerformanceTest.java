@@ -34,7 +34,10 @@ public class JsonViewSerializerPerformanceTest {
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(new Object[][]{
-        {100}, {1000}, {10000}, {100000}
+        {100},
+        {1_000},
+        {10_000},
+        {100_000},
     });
   }
 
@@ -52,8 +55,12 @@ public class JsonViewSerializerPerformanceTest {
 
   @Test
   public void comparePerformance() throws Exception {
-    long baselineTimes = randomSingleObjectPerformance(() ->
-        compare.writeValueAsString(testObject()));
+    long baselineTimes = randomSingleObjectPerformance(() -> {
+      // Include this because we're testing the serializer. It's not apples-to-apples if we don't
+      // include the same pre-work.
+      JsonView.with(testObject()).onClass(TestObject.class, match().exclude("int1"));
+      compare.writeValueAsString(testObject());
+    });
     long jsonViewTimes = randomSingleObjectPerformance(() ->
         sut.writeValueAsString(JsonView.with(testObject()).onClass(TestObject.class, match().exclude("int1"))));
     String difference = divide(jsonViewTimes * 100L, baselineTimes);

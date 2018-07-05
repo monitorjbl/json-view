@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static com.monitorjbl.json.Memoizer.FunctionCache.ACCESSIBLE_PROPERTY;
+import static com.monitorjbl.json.Memoizer.FunctionCache.ANNOTATIONS;
+import static com.monitorjbl.json.Memoizer.FunctionCache.CLASS_MATCHES;
 import static com.monitorjbl.json.Memoizer.FunctionCache.IGNORE_ANNOTATIONS;
 import static com.monitorjbl.json.Memoizer.FunctionCache.MATCHES;
 
@@ -26,15 +28,31 @@ class Memoizer {
   }
 
   public <T> T matches(Set<String> values, String pattern, boolean matchPrefix, Supplier<T> compute) {
-    return (T) fitToMaxSize(MATCHES).computeIfAbsent(new TriArg(values, pattern, matchPrefix), (k) -> compute.get());
+    return computeIfAbsent(MATCHES, new TriArg(values, pattern, matchPrefix), compute);
+  }
+
+  public <T> T classMatches(JsonView jsonView, Class cls, Supplier<T> compute) {
+    return computeIfAbsent(CLASS_MATCHES, new BiArg(jsonView, cls), compute);
+  }
+
+  public <T> T annotations(Class cls, Supplier<T> compute) {
+    return computeIfAbsent(ANNOTATIONS, new MonoArg(cls), compute);
   }
 
   public <T> T annotatedWithIgnore(AccessibleProperty property, Supplier<T> compute) {
-    return (T) fitToMaxSize(IGNORE_ANNOTATIONS).computeIfAbsent(new MonoArg(property), (k) -> compute.get());
+    return computeIfAbsent(IGNORE_ANNOTATIONS, new MonoArg(property), compute);
   }
 
   public <T> T accessibleProperty(Class cls, Supplier<T> compute) {
-    return (T) fitToMaxSize(ACCESSIBLE_PROPERTY).computeIfAbsent(new MonoArg(cls), (k) -> compute.get());
+    return computeIfAbsent(ACCESSIBLE_PROPERTY, new MonoArg(cls), compute);
+  }
+
+  public <T> T computeIfAbsent(FunctionCache cacheName, Arg arg, Supplier<T> compute) {
+    Map<Arg, Object> map = fitToMaxSize(cacheName);
+    if(!map.containsKey(arg)) {
+      map.put(arg, compute.get());
+    }
+    return (T) map.get(arg);
   }
 
   private Map<Arg, Object> fitToMaxSize(FunctionCache key) {
@@ -46,7 +64,7 @@ class Memoizer {
   }
 
   enum FunctionCache {
-    IGNORE_ANNOTATIONS, MATCHES, ACCESSIBLE_PROPERTY
+    IGNORE_ANNOTATIONS, MATCHES, ANNOTATIONS, ACCESSIBLE_PROPERTY, CLASS_MATCHES
   }
 
   private interface Arg {}
@@ -68,6 +86,13 @@ class Memoizer {
     @Override
     public int hashCode() {
       return arg1 != null ? arg1.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+      return "MonoArg{" +
+          "arg1=" + arg1 +
+          '}';
     }
   }
 
@@ -92,6 +117,14 @@ class Memoizer {
     @Override
     public int hashCode() {
       return Objects.hash(arg1, arg2);
+    }
+
+    @Override
+    public String toString() {
+      return "BiArg{" +
+          "arg1=" + arg1 +
+          ", arg2=" + arg2 +
+          '}';
     }
   }
 
@@ -121,6 +154,15 @@ class Memoizer {
       result = 31 * result + (arg2 != null ? arg2.hashCode() : 0);
       result = 31 * result + (arg3 != null ? arg3.hashCode() : 0);
       return result;
+    }
+
+    @Override
+    public String toString() {
+      return "TriArg{" +
+          "arg1=" + arg1 +
+          ", arg2=" + arg2 +
+          ", arg3=" + arg3 +
+          '}';
     }
   }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,24 +28,26 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.monitorjbl.json.MatcherBehavior.CLASS_FIRST;
 import static com.monitorjbl.json.MatcherBehavior.PATH_FIRST;
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toSet;
 
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
-
+  public static boolean log = false;
   /**
    * Cached results from expensive (pure) methods
    */
@@ -315,14 +318,14 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
       Class cls = obj.getClass();
       while(!cls.equals(Object.class)) {
-        Set<AccessibleProperty> fields = getAccessibleProperties(cls);
+        List<AccessibleProperty> fields = getAccessibleProperties(cls);
 
         for(AccessibleProperty property : fields) {
           try {
             //if the field has a serializer annotation on it, serialize with it
             if(fieldAllowed(property, obj.getClass())) {
               Object val = readField(obj, property);
-              if(!valueAllowed(val, obj.getClass())) {
+              if(!valueAllowed(property, val, obj.getClass())) {
                 continue;
               }
 
@@ -353,34 +356,62 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       jgen.writeEndObject();
     }
 
-    boolean valueAllowed(Object value, Class cls) {
+    boolean valueAllowed(AccessibleProperty property, Object value, Class cls) {
+      Include defaultInclude = serializerProvider.getConfig() == null ? Include.ALWAYS : serializerProvider.getConfig().getSerializationInclusion();
+      JsonInclude jsonInclude = getAnnotation(property, JsonInclude.class);
+      JsonSerialize jsonSerialize = getAnnotation(cls, JsonSerialize.class);
+
+      // Make sure local annotations win over global ones
+      if(jsonInclude != null && jsonInclude.value() == Include.NON_NULL && value == null) {
+        return false;
+      }
+
       return value != null
-          || (serializerProvider.getConfig() != null
-          && serializerProvider.getConfig().getSerializationInclusion() == Include.ALWAYS
-          && getAnnotation(cls, JsonSerialize.class) == null)
-          || (getAnnotation(cls, JsonSerialize.class) != null
-          && readClassAnnotation(cls, JsonSerialize.class, "include") == Inclusion.ALWAYS);
+          || (defaultInclude == Include.ALWAYS && jsonSerialize == null)
+          || (jsonSerialize != null && jsonSerialize.include() == Inclusion.ALWAYS);
     }
 
+    /**
+     * Do a search for *all* matchers for a class. This takes into account all relevant
+     * parents in the class hierarchy. If multiple matches are found, the matches will
+     * be unioned together.
+     */
     @SuppressWarnings("unchecked")
-    private Match classMatchSearch(Class declaringClass) {
-      Match match = null;
-      Class cls = declaringClass;
-      while(!cls.equals(Object.class) && match == null) {
-        match = result.getMatch(cls);
+    private Optional<Match> classMatchSearch(Class declaringClass) {
+//      return memoizer.classMatches(result, declaringClass, () -> {
+      List<Match> matches = new ArrayList<>();
+      Stack<Class> classes = new Stack<>();
+      classes.push(declaringClass);
+      while(!classes.isEmpty()) {
+        Class cls = classes.pop();
+        Match match = result.getMatch(cls);
 
-        //search for any matching interfaces as well, stopping on the first one
-        if(match == null && getInterfaces(cls) != null) {
-          for(Class iface : getInterfaces(cls)) {
-            match = result.getMatch(iface);
-            if(match != null) {
-              break;
-            }
-          }
+        if(match != null) {
+          matches.add(match);
         }
-        cls = cls.getSuperclass();
+        if(cls.getInterfaces() != null) {
+          Stream.of(cls.getInterfaces()).forEach(c -> classes.push(c));
+        }
+        if(cls.getSuperclass() != null && !cls.getSuperclass().equals(Object.class)) {
+          classes.push(cls.getSuperclass());
+        }
       }
-      return match;
+
+      if(matches.size() == 1) {
+        return Optional.of(matches.get(0));
+      } else if(matches.size() > 1) {
+        // Join all the includes and excludes
+        Match unionMatch = new Match();
+        matches.forEach(m -> {
+          unionMatch.getExcludes().addAll(m.getExcludes());
+          unionMatch.getIncludes().addAll(m.getIncludes());
+          unionMatch.getTransforms().putAll(m.getTransforms());
+        });
+        return Optional.of(unionMatch);
+      } else {
+        return Optional.empty();
+      }
+//      });
     }
 
     @SuppressWarnings("unchecked")
@@ -438,7 +469,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       //search for matching class
       Match match = null;
       if(currentBehavior == CLASS_FIRST) {
-        match = classMatchSearch(declaringClass);
+        match = classMatchSearch(declaringClass).orElse(null);
         if(match == null) {
           match = currentMatch;
         } else {
@@ -448,7 +479,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
         if(currentMatch != null) {
           match = currentMatch;
         } else {
-          match = classMatchSearch(declaringClass);
+          match = classMatchSearch(declaringClass).orElse(null);
           prefix = "";
         }
       }
@@ -587,10 +618,10 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       return cls.getInterfaces();
     }
 
-    private Set<AccessibleProperty> getAccessibleProperties(Class cls) {
+    private List<AccessibleProperty> getAccessibleProperties(Class cls) {
       return memoizer.accessibleProperty(cls, () -> {
         // Gather all fields and methods
-        Map<String, AccessibleProperty> accessibleProperties = new HashMap<>();
+        Map<String, AccessibleProperty> accessibleProperties = new LinkedHashMap<>();
         Predicate<Field> shouldProcessField = fieldVisibilityAllowed(cls);
         Predicate<Method> shouldProcessMethod = getterVisibilityAllowed(cls);
         Predicate<Object> visible = (o) -> {
@@ -603,12 +634,12 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
           }
         };
 
-        Stream.of(cls.getDeclaredFields())
-            .map(f -> new AccessibleProperty(cls, f.getName(), f.getAnnotations(), f))
+        getDeclaredFields(cls).stream()
+            .map(f -> new AccessibleProperty(f.getName(), f.getAnnotations(), f))
             .forEach(p -> accessibleProperties.put(p.name, p));
-        Stream.of(cls.getDeclaredMethods())
+        getDeclaredMethods(cls).stream()
             .filter(m -> m.getName().startsWith("get") && !m.getReturnType().equals(Void.class) && m.getParameters().length == 0)
-            .map(m -> new AccessibleProperty(cls, getFieldNameFromGetter(m), m.getAnnotations(), m))
+            .map(m -> new AccessibleProperty(getFieldNameFromGetter(m), m.getAnnotations(), m))
             .forEach(p -> {
               AccessibleProperty field = accessibleProperties.get(p.name);
 
@@ -616,7 +647,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
               if(field != null) {
                 Set<Annotation> annotations = new HashSet<Annotation>(asList(field.annotations));
                 annotations.addAll(asList(p.annotations));
-                p = new AccessibleProperty(p.declaringClass, p.name, annotations.toArray(new Annotation[0]), p.property);
+                p = new AccessibleProperty(p.name, annotations.toArray(new Annotation[0]), p.property);
               }
 
               // TODO: Makes sure combined annotations are applied to the field when method visibility is disallowed
@@ -627,12 +658,54 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
 
         return accessibleProperties.values().stream()
             .filter(p -> visible.test(p.property))
-            .collect(toSet());
+            .collect(Collectors.toList());
       });
     }
 
+    private List<Field> getDeclaredFields(Class cls) {
+      List<Field> fields = new ArrayList<>();
+      Stack<Class> parents = new Stack<>();
+      parents.push(cls);
+
+      while(!parents.isEmpty()) {
+        Class c = parents.pop();
+
+        Stream.of(c.getDeclaredFields()).forEach(f -> fields.add(f));
+
+        if(c.getSuperclass() != null && !c.getSuperclass().equals(Object.class)) {
+          parents.push(c.getSuperclass());
+        }
+      }
+
+      return fields;
+    }
+
+    private List<Method> getDeclaredMethods(Class cls) {
+      List<Method> methods = new ArrayList<>();
+      Stack<Class> parents = new Stack<>();
+      parents.push(cls);
+
+      while(!parents.isEmpty()) {
+        Class c = parents.pop();
+
+        Stream.of(c.getDeclaredMethods()).forEach(m -> methods.add(m));
+
+        if(c.getSuperclass() != null && !c.getSuperclass().equals(Object.class)) {
+          parents.push(c.getSuperclass());
+        }
+
+        if(c.getInterfaces() != null) {
+          Stream.of(c.getInterfaces()).forEach(i -> parents.push(i));
+        }
+      }
+
+      return methods;
+    }
+
     private Annotation[] getAnnotations(Class cls) {
-      return cls.getAnnotations();
+      return memoizer.annotations(cls, () -> {
+        return cls.getAnnotations();
+      });
     }
 
     @SuppressWarnings("unchecked")
@@ -743,17 +816,18 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     public final Object property;
     private final Function<Object, Object> getter;
 
-    public AccessibleProperty(Class declaringClass, String name, Annotation[] annotations, Object property) {
-      this.declaringClass = declaringClass;
+    public AccessibleProperty(String name, Annotation[] annotations, Object property) {
       this.name = name;
       this.annotations = annotations;
       this.property = property;
 
       if(property instanceof Field) {
+        this.declaringClass = ((Field) property).getDeclaringClass();
         this.type = ((Field) property).getType();
         this.modifiers = ((Field) property).getModifiers();
         this.getter = this::getFromField;
       } else if(property instanceof Method) {
+        this.declaringClass = ((Method) property).getDeclaringClass();
         this.type = ((Method) property).getReturnType();
         this.modifiers = ((Method) property).getModifiers();
         this.getter = this::getFromMethod;
@@ -789,19 +863,14 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
       if(this == o) return true;
       if(o == null || getClass() != o.getClass()) return false;
       AccessibleProperty that = (AccessibleProperty) o;
-      return Objects.equals(name, that.name);
+      return Objects.equals(declaringClass, that.declaringClass) &&
+          Objects.equals(name, that.name);
     }
 
     @Override
     public int hashCode() {
-      return name.hashCode();
-    }
 
-    @Override
-    public String toString() {
-      return "AccessibleProperty{" +
-          "name='" + name + '\'' +
-          '}';
+      return Objects.hash(declaringClass, name);
     }
   }
 }

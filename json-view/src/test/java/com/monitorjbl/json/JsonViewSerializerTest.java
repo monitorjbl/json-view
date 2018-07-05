@@ -24,6 +24,9 @@ import com.monitorjbl.json.model.TestNulls;
 import com.monitorjbl.json.model.TestObject;
 import com.monitorjbl.json.model.TestObject.TestEnum;
 import com.monitorjbl.json.model.TestSubobject;
+import com.monitorjbl.json.model.TestSuperinterface;
+import com.monitorjbl.json.model.TestSuperinterface.TestChildInterface;
+import com.monitorjbl.json.model.TestSuperinterface.TestInterfaceObject;
 import com.monitorjbl.json.model.TestUnrelatedObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -224,6 +228,7 @@ public class JsonViewSerializerTest {
     ref3.setId(3L);
     ref3.setName("xxzcvxc");
 
+    JsonViewSerializer.log = true;
     String serialized = sut.writeValueAsString(
         JsonView.with(asList(ref1, ref2, ref3))
             .onClass(TestObject.class, match()
@@ -235,6 +240,7 @@ public class JsonViewSerializerTest {
             .onClass(TestUnrelatedObject.class, match()
                 .exclude("name")));
     List<Map<String, Object>> output = sut.readValue(serialized, ArrayList.class);
+    JsonViewSerializer.log = false;
 
     assertEquals(3, output.size());
 
@@ -582,13 +588,13 @@ public class JsonViewSerializerTest {
   @Test
   public void testWriteNullValues_enabledGlobally() throws Exception {
     TestObject ref = new TestObject();
-    sut.setSerializationInclusion(Include.ALWAYS);
+    sut = sut.setSerializationInclusion(Include.ALWAYS);
 
     String serialized = sut.writeValueAsString(JsonView.with(ref));
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
-    assertTrue(obj.containsKey("str2"));
-    assertNull(obj.get("str2"));
+    assertTrue(obj.containsKey("list"));
+    assertNull(obj.get("list"));
   }
 
   @Test
@@ -1011,6 +1017,77 @@ public class JsonViewSerializerTest {
     Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
 
     assertEquals("valid", obj.get("id"));
+  }
+
+  @Test
+  public void testSuperinterfaces() throws Exception {
+    TestInterfaceObject ref = new TestInterfaceObject();
+    ref.setDescription("description");
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals("ID", obj.get("id"));
+    assertEquals("NAME", obj.get("name"));
+    assertEquals("description", obj.get("description"));
+  }
+
+  @Test
+  public void testSuperinterfaces_matchers() throws Exception {
+    TestInterfaceObject ref = new TestInterfaceObject();
+    ref.setDescription("description");
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref)
+        .onClass(TestSuperinterface.class, match()
+            .exclude("id"))
+        .onClass(TestChildInterface.class, match()
+            .exclude("name")));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertFalse(obj.containsKey("id"));
+    assertFalse(obj.containsKey("name"));
+    assertEquals("description", obj.get("description"));
+  }
+
+  @Test
+  public void testSerializationOptions_includeNonNullGlobally() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    sut = sut.setSerializationInclusion(Include.NON_NULL);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertFalse(obj.containsKey("str1"));
+    assertEquals(ref.getInt1(), obj.get("int1"));
+  }
+
+  @Test
+  public void testSerializationOptions_includeNonNullLocally() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setStr1("test");
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, HashMap.class);
+
+    assertEquals(ref.getStr1(), obj.get("str1"));
+    assertFalse(obj.containsKey("str2"));
+  }
+
+  @Test
+  public void testSerializationOrder() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setStr2("sdfsdf");
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, LinkedHashMap.class);
+
+    List<String> keys = new ArrayList<>(obj.keySet());
+    assertEquals("sub", keys.get(0));
+    assertEquals("subWithIgnores", keys.get(1));
+    assertEquals("str1", keys.get(2));
+    assertEquals("str2", keys.get(3));
+    assertEquals("date", keys.get(4));
   }
 
 }
