@@ -3,6 +3,10 @@ package com.monitorjbl.json;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
@@ -1088,6 +1092,48 @@ public class JsonViewSerializerTest {
     assertEquals("str1", keys.get(2));
     assertEquals("str2", keys.get(3));
     assertEquals("date", keys.get(4));
+  }
+
+  @Test
+  public void testJacksonJsonNodeSupport_object() throws Exception {
+    TestObject ref = new TestObject();
+    ObjectNode node1 = sut.createObjectNode();
+    ObjectNode node2 = sut.createObjectNode();
+    node2.set("stringfield", new TextNode("hello"));
+    node1.set("jacksonObject", node2);
+    ref.setJsonNode(node1);
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, LinkedHashMap.class);
+
+    assertNotNull(obj.get("jsonNode"));
+    assertTrue(obj.get("jsonNode") instanceof Map);
+
+    Map<String, Object> jsonNode = (Map<String, Object>) obj.get("jsonNode");
+    assertTrue(jsonNode.get("jacksonObject") instanceof Map);
+    assertEquals("hello", ((Map) jsonNode.get("jacksonObject")).get("stringfield"));
+  }
+
+  @Test
+  public void testJacksonJsonNodeSupport_textNode() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setJsonNode(new TextNode("asdf"));
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, LinkedHashMap.class);
+
+    assertEquals(obj.get("jsonNode"), "asdf");
+  }
+
+  @Test
+  public void testJacksonJsonNodeSupport_nullNode() throws Exception {
+    TestObject ref = new TestObject();
+    ref.setJsonNode(NullNode.getInstance());
+
+    String serialized = sut.writeValueAsString(JsonView.with(ref));
+    Map<String, Object> obj = sut.readValue(serialized, LinkedHashMap.class);
+
+    assertNull(obj.get("jsonNode"));
   }
 
 }

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -342,6 +343,9 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
                 } else {
                   new JsonWriter(jgen, result, currentMatch, currentPath, path, property, serializerProvider).write(name, val);
                 }
+              } else if(val instanceof JsonNode) {
+                // Let Jackson deal with these, they're special
+                serializerProvider.defaultSerializeValue(val, jgen);
               } else {
                 new JsonWriter(jgen, result, currentMatch, currentPath, path, property, serializerProvider).write(name, val);
               }
