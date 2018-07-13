@@ -51,7 +51,7 @@ To use it, simply add this project to your classpath using your build tool of ch
 <dependency>
     <groupId>com.monitorjbl</groupId>
     <artifactId>json-view</artifactId>
-    <version>0.16</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -223,7 +223,7 @@ To use it, simply add this project to your classpath using your build tool of ch
 <dependency>
     <groupId>com.monitorjbl</groupId>
     <artifactId>spring-json-view</artifactId>
-    <version>0.14</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -374,6 +374,6 @@ Once you've done this, you can refer to the latest version of the library in you
 <dependency>
   <groupId>com.monitorjbl</groupId>
   <artifactId>json-view</artifactId>
-  <version>0.17-SNAPSHOT</version>
+  <version>1.0.1</version>
 </dependency>
 ```
