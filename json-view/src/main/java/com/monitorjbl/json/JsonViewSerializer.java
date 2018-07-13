@@ -317,44 +317,40 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     void writeObject(Object obj) throws IOException {
       jgen.writeStartObject();
 
-      Class cls = obj.getClass();
-      while(!cls.equals(Object.class)) {
-        List<AccessibleProperty> fields = getAccessibleProperties(cls);
+      List<AccessibleProperty> fields = getAccessibleProperties(obj.getClass());
 
-        for(AccessibleProperty property : fields) {
-          try {
-            //if the field has a serializer annotation on it, serialize with it
-            if(fieldAllowed(property, obj.getClass())) {
-              Object val = readField(obj, property);
-              if(!valueAllowed(property, val, obj.getClass())) {
-                continue;
-              }
+      for(AccessibleProperty property : fields) {
+        try {
+          //if the field has a serializer annotation on it, serialize with it
+          if(fieldAllowed(property, obj.getClass())) {
+            Object val = readField(obj, property);
+            if(!valueAllowed(property, val, obj.getClass())) {
+              continue;
+            }
 
-              String name = getFieldName(property);
-              jgen.writeFieldName(name);
+            String name = getFieldName(property);
+            jgen.writeFieldName(name);
 
-              JsonSerializer fieldSerializer = annotatedWithJsonSerialize(property);
-              if(fieldSerializer != null) {
-                fieldSerializer.serialize(val, jgen, serializerProvider);
-              } else if(customSerializersMap != null && val != null) {
-                JsonSerializer<Object> serializer = customSerializersMap.get(val.getClass());
-                if(serializer != null) {
-                  serializer.serialize(val, jgen, serializerProvider);
-                } else {
-                  new JsonWriter(jgen, result, currentMatch, currentPath, path, property, serializerProvider).write(name, val);
-                }
-              } else if(val instanceof JsonNode) {
-                // Let Jackson deal with these, they're special
-                serializerProvider.defaultSerializeValue(val, jgen);
+            JsonSerializer fieldSerializer = annotatedWithJsonSerialize(property);
+            if(fieldSerializer != null) {
+              fieldSerializer.serialize(val, jgen, serializerProvider);
+            } else if(customSerializersMap != null && val != null) {
+              JsonSerializer<Object> serializer = customSerializersMap.get(val.getClass());
+              if(serializer != null) {
+                serializer.serialize(val, jgen, serializerProvider);
               } else {
                 new JsonWriter(jgen, result, currentMatch, currentPath, path, property, serializerProvider).write(name, val);
               }
+            } else if(val instanceof JsonNode) {
+              // Let Jackson deal with these, they're special
+              serializerProvider.defaultSerializeValue(val, jgen);
+            } else {
+              new JsonWriter(jgen, result, currentMatch, currentPath, path, property, serializerProvider).write(name, val);
             }
-          } catch(IllegalArgumentException | IllegalAccessException e) {
-            throw new RuntimeException(e);
           }
+        } catch(IllegalArgumentException | IllegalAccessException e) {
+          throw new RuntimeException(e);
         }
-        cls = cls.getSuperclass();
       }
 
       jgen.writeEndObject();
