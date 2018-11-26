@@ -791,7 +791,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     private String getFieldNameFromGetter(Method method) {
-      String name = method.getName().replace("get", "");
+      String name = method.getName().replaceFirst("get", "");
       return name.substring(0, 1).toLowerCase() + name.substring(1);
     }
 

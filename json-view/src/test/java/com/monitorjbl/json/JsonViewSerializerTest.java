@@ -1147,5 +1147,18 @@ public class JsonViewSerializerTest {
 
     assertEquals(ref.getId(), obj.get("id"));
   }
+  
+  @Test
+  public void testFieldWithGetInName() throws IOException {
+    TestObject ref = new TestObject();
+    ref.setInt1(1);
+    ref.setWidgetName("random name");
+    String serialized = sut.writeValueAsString(
+        JsonView.with(ref).onClass(TestObject.class, match()));
+
+    Map<String, Object> obj = sut.readValue(serialized, NonReplacableKeyMap.class);
+    assertNull(obj.get("widName"));
+    assertNotNull(obj.get("widgetName"));
+  }
 
 }

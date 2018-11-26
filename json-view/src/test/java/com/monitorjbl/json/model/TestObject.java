@@ -62,6 +62,7 @@ public class TestObject implements TestInterface {
   private UUID uuid;
   private TestObject recursion;
   private JsonNode jsonNode;
+  private String widgetName;
 
   public String getStr1() {
     return str1;
@@ -318,5 +319,13 @@ public class TestObject implements TestInterface {
   @JsonIgnore
   public String getIgnoredValue() {
     return "not_valid";
+  }
+  
+  public String getWidgetName() {
+    return widgetName;
+  }
+
+  public void setWidgetName(String widgetName) {
+    this.widgetName = widgetName;
   }
 }
