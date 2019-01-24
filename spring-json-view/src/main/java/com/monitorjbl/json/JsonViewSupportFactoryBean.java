@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
 import org.springframework.web.servlet.mvc.method.annotation.HttpEntityMethodProcessor;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
@@ -19,13 +18,13 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class JsonViewSupportFactoryBean implements InitializingBean {
-  private static final Logger log = LoggerFactory.getLogger(JsonViewSupportFactoryBean.class);
+  protected static final Logger log = LoggerFactory.getLogger(JsonViewSupportFactoryBean.class);
 
   @Autowired
-  private RequestMappingHandlerAdapter adapter;
+  protected RequestMappingHandlerAdapter adapter;
 
-  private final JsonViewMessageConverter converter;
-  private final DefaultView defaultView;
+  protected final JsonViewMessageConverter converter;
+  protected final DefaultView defaultView;
 
   public JsonViewSupportFactoryBean() {
     this(new ObjectMapper());
@@ -52,7 +51,7 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
   public void afterPropertiesSet() throws Exception {
     List<HandlerMethodReturnValueHandler> handlers = new ArrayList<>(adapter.getReturnValueHandlers());
 
-    List<HttpMessageConverter<?>> converters = removeJackson(adapter.getMessageConverters());
+    List<HttpMessageConverter<?>> converters = removeJacksonConverters(adapter.getMessageConverters());
     converters.add(converter);
     adapter.setMessageConverters(converters);
 
@@ -60,20 +59,20 @@ public class JsonViewSupportFactoryBean implements InitializingBean {
     adapter.setReturnValueHandlers(handlers);
   }
 
-  private List<HttpMessageConverter<?>> removeJackson(List<HttpMessageConverter<?>> converters) {
+  protected List<HttpMessageConverter<?>> removeJacksonConverters(List<HttpMessageConverter<?>> converters) {
     List<HttpMessageConverter<?>> copy = new ArrayList<>(converters);
     Iterator<HttpMessageConverter<?>> iter = copy.iterator();
     while(iter.hasNext()) {
       HttpMessageConverter<?> next = iter.next();
-      if(next instanceof MappingJackson2HttpMessageConverter) {
-        log.debug("Removing MappingJackson2HttpMessageConverter as it interferes with us");
+      if (next.getClass().getSimpleName().startsWith("MappingJackson2")) {
+        log.debug("Removing {} as it interferes with us", next.getClass().getName());
         iter.remove();
       }
     }
     return copy;
   }
 
-  private void decorateHandlers(List<HandlerMethodReturnValueHandler> handlers) {
+  protected void decorateHandlers(List<HandlerMethodReturnValueHandler> handlers) {
     List<HttpMessageConverter<?>> converters = new ArrayList<>(adapter.getMessageConverters());
     converters.add(converter);
     for(HandlerMethodReturnValueHandler handler : handlers) {
