@@ -6,7 +6,7 @@
 
   <groupId>com.monitorjbl</groupId>
   <artifactId>json-view</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.2-SNAPSHOT</version>
   <name>json-view</name>
   <description>Provides programmatic exclusion/inclusion for Jackson JSON serialization</description>
   <url>https://github.com/monitorjbl/json-view</url>
