@@ -1,4 +1,4 @@
-[![Run Status](https://api.shippable.com/projects/55cfbb00edd7f2c052a980a8/badge?branch=master)](https://app.shippable.com/projects/55cfbb00edd7f2c052a980a8)
+![Run Status](https://gitlab.com/monitorjbl/json-view/badges/master/pipeline.svg)
 
 # Programmatic JSON Views
 
