@@ -106,6 +106,7 @@ public class JsonViewSerializerTest {
     ref.setStringArray(new String[]{"apple", "banana"});
     ref.setList(asList("red", "blue", "green"));
     ref.setSub(new TestSubobject("qwerqwerqwerqw", new TestSubobject("poxcpvoxcv")));
+    ref.setTargetObject("blarg");
     String serialized = sut.writeValueAsString(
         JsonView.with(ref).onClass(TestObject.class, match()
             .exclude("str2")
@@ -115,6 +116,7 @@ public class JsonViewSerializerTest {
     Map<String, Object> obj = sut.readValue(serialized, NonReplacableKeyMap.class);
     assertNull(obj.get("str2"));
     assertNotNull(obj.get("sub"));
+    assertNotNull(obj.get("targetObject"));
     assertNull(((Map) obj.get("sub")).get("val"));
   }
 
@@ -1090,7 +1092,8 @@ public class JsonViewSerializerTest {
     assertEquals("subWithIgnores", keys.get(1));
     assertEquals("str1", keys.get(2));
     assertEquals("str2", keys.get(3));
-    assertEquals("date", keys.get(4));
+    assertEquals("targetObject", keys.get(4));
+    assertEquals("date", keys.get(5));
   }
 
   @Test

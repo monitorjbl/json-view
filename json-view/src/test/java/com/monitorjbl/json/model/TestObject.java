@@ -32,6 +32,7 @@ public class TestObject implements TestInterface {
   private String str2;
   @JsonIgnore
   private String ignoredDirect;
+  private String targetObject;
   private String ignoredIndirect;
   private Date date;
   private int int1;
@@ -94,6 +95,14 @@ public class TestObject implements TestInterface {
 
   public void setIgnoredIndirect(String ignoredIndirect) {
     this.ignoredIndirect = ignoredIndirect;
+  }
+
+  public String getTargetObject() {
+    return targetObject;
+  }
+
+  public void setTargetObject(String targetObject) {
+    this.targetObject = targetObject;
   }
 
   public Date getDate() {
