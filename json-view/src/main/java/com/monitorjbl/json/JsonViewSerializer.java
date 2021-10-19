@@ -48,6 +48,9 @@ import static com.monitorjbl.json.MatcherBehavior.PATH_FIRST;
 import static java.util.Arrays.asList;
 
 public class JsonViewSerializer extends JsonSerializer<JsonView> {
+
+  private static final String GETTER_PREFIX = "get";
+  private static final String BOOLEAN_GETTER_PREFIX = "is";
   public static boolean log = false;
   /**
    * Cached results from expensive (pure) methods
@@ -638,7 +641,7 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             .map(f -> new AccessibleProperty(f.getName(), f.getAnnotations(), f))
             .forEach(p -> accessibleProperties.put(p.name, p));
         getDeclaredMethods(cls).stream()
-            .filter(m -> m.getName().startsWith("get") && !m.getReturnType().equals(Void.class) && m.getParameters().length == 0)
+            .filter(this::isValidGetter)
             .map(m -> new AccessibleProperty(getFieldNameFromGetter(m), m.getAnnotations(), m))
             .forEach(p -> {
               AccessibleProperty field = accessibleProperties.get(p.name);
@@ -660,6 +663,13 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
             .filter(p -> visible.test(p.property))
             .collect(Collectors.toList());
       });
+    }
+
+    private boolean isValidGetter(Method m) {
+      boolean isGetter = m.getName().startsWith(GETTER_PREFIX) && !m.getReturnType().equals(Void.class) && m.getParameters().length == 0;
+      boolean isBooleanGetter = m.getName().startsWith(BOOLEAN_GETTER_PREFIX)
+              && m.getReturnType().getSimpleName().equalsIgnoreCase(Boolean.class.getSimpleName()) && m.getParameters().length == 0;
+      return isGetter || isBooleanGetter;
     }
 
     private List<Field> getDeclaredFields(Class cls) {
@@ -791,10 +801,18 @@ public class JsonViewSerializer extends JsonSerializer<JsonView> {
     }
 
     private String getFieldNameFromGetter(Method method) {
-      if (method.getName().equals("get")) {
+      String methodName = method.getName();
+      if (methodName.equals(GETTER_PREFIX) || methodName.equals(BOOLEAN_GETTER_PREFIX)) {
     	  return method.getName();
       }
-      String name = method.getName().replaceFirst("get", "");
+      String name;
+      if (methodName.startsWith(GETTER_PREFIX)) {
+          name = methodName.replaceFirst(GETTER_PREFIX, "");
+      } else if (methodName.startsWith(BOOLEAN_GETTER_PREFIX)){
+          name = methodName.replaceFirst(BOOLEAN_GETTER_PREFIX, "");
+      } else {
+          throw new IllegalArgumentException(String.format("'%s' method is not a valid getter", methodName));
+      }
       return name.substring(0, 1).toLowerCase() + name.substring(1);
     }
 

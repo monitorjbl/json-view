@@ -4,6 +4,8 @@ public class TestSubobject {
   private String val;
   private String otherVal;
   private TestSubobject sub;
+  private boolean booleanVal;
+  private Boolean booleanBoxedVal;
 
   public TestSubobject(String val) {
     this.val = val;
@@ -15,6 +17,22 @@ public class TestSubobject {
   }
 
   public TestSubobject() {
+  }
+
+  public boolean isBooleanVal() {
+    return booleanVal;
+  }
+
+  public void setBooleanVal(boolean booleanVal) {
+    this.booleanVal = booleanVal;
+  }
+
+  public Boolean isBooleanBoxedVal() {
+    return booleanBoxedVal;
+  }
+
+  public void setBooleanBoxedVal(Boolean booleanBoxedVal) {
+    this.booleanBoxedVal = booleanBoxedVal;
   }
 
   public String getVal() {
