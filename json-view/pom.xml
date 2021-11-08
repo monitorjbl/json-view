@@ -6,7 +6,7 @@
 
   <groupId>com.monitorjbl</groupId>
   <artifactId>json-view</artifactId>
-  <version>1.1.0</version>
+  <version>1.1.1-beta</version>
   <name>json-view</name>
   <description>Provides programmatic exclusion/inclusion for Jackson JSON serialization</description>
   <url>https://github.com/monitorjbl/json-view</url>
@@ -125,13 +125,11 @@
   </profiles>
 
   <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
     <repository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+      <id>hrs.repo</id>
+      <url>https://artifactory.int.hrs.com/artifactory/releases-local</url>
+<!--      <url>https://maven.int.hrs.com/artifactory/hrsRepo</url>-->
+<!--      <url>http://detukr1-repo-update-981.data.det/repo</url>-->
     </repository>
   </distributionManagement>
 
