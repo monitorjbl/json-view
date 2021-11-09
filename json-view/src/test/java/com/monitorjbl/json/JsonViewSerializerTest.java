@@ -832,6 +832,8 @@ public class JsonViewSerializerTest {
     TestSubobject subobject = new TestSubobject();
     subobject.setVal("someval");
     subobject.setOtherVal("otherval");
+    subobject.setBooleanVal(true);
+    subobject.setBooleanBoxedVal(true);
     TestObject ref = new TestObject();
     ref.setStr1("somestr");
     ref.setSub(subobject);
@@ -848,6 +850,9 @@ public class JsonViewSerializerTest {
     Map<String, Object> subMap = (Map<String, Object>) obj.get("sub");
     assertNotNull(subMap.get("val"));
     assertEquals(subobject.getVal(), subMap.get("val"));
+    assertNotNull(subMap.get("booleanVal"));
+    assertEquals(subobject.isBooleanVal(), subMap.get("booleanVal"));
+    assertEquals(subobject.isBooleanBoxedVal(), subMap.get("booleanBoxedVal"));
     assertNull(subMap.get("otherVal"));
   }
 
